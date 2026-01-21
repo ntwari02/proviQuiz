@@ -1,0 +1,217 @@
+{
+  "baseUrl": "http://localhost:5000",
+  "endpoints": [
+    {
+      "name": "Health check",
+      "method": "GET",
+      "url": "/health",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Register",
+      "method": "POST",
+      "url": "/api/auth/register",
+      "auth": "none",
+      "body": {
+        "email": "student1@example.com",
+        "password": "Password123!",
+        "name": "Student One"
+      }
+    },
+    {
+      "name": "Login",
+      "method": "POST",
+      "url": "/api/auth/login",
+      "auth": "none",
+      "body": {
+        "email": "student1@example.com",
+        "password": "Password123!"
+      }
+    },
+    {
+      "name": "Get current user (me)",
+      "method": "GET",
+      "url": "/api/auth/me",
+      "auth": "Bearer {{token}}",
+      "body": null
+    },
+    {
+      "name": "Forgot password",
+      "method": "POST",
+      "url": "/api/auth/forgot-password",
+      "auth": "none",
+      "body": {
+        "email": "student1@example.com"
+      }
+    },
+    {
+      "name": "Reset password",
+      "method": "POST",
+      "url": "/api/auth/reset-password",
+      "auth": "none",
+      "body": {
+        "token": "{{resetToken}}",
+        "newPassword": "NewPassword123!"
+      }
+    },
+    {
+      "name": "User profile",
+      "method": "GET",
+      "url": "/api/users/profile",
+      "auth": "Bearer {{token}}",
+      "body": null
+    },
+    {
+      "name": "Random questions",
+      "method": "GET",
+      "url": "/api/questions/random?limit=20",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Question bank (all, paged)",
+      "method": "GET",
+      "url": "/api/questions/all?limit=50&skip=0",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Question bank (filtered by category)",
+      "method": "GET",
+      "url": "/api/questions?limit=50&skip=0&category=Signs",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Create question (admin)",
+      "method": "POST",
+      "url": "/api/questions",
+      "auth": "Bearer {{adminToken}}",
+      "body": {
+        "question": "Ni iki ugomba gukora imbere y'icyapa kiburira impanuka?",
+        "options": {
+          "a": "Kongera umuvuduko",
+          "b": "Kuvuga kuri telefone",
+          "c": "Kugabanya umuvuduko no kwitonza",
+          "d": "Kureka gutega amatwi"
+        },
+        "correct": "c",
+        "explanation": "Ibyapa biburira bisaba kugabanya umuvuduko no kwitonda.",
+        "category": "Warning signs",
+        "difficulty": "easy",
+        "topic": "Signs"
+      }
+    },
+    {
+      "name": "Bulk create questions (admin)",
+      "method": "POST",
+      "url": "/api/questions/bulk",
+      "auth": "Bearer {{adminToken}}",
+      "body": [
+        {
+          "question": "Ikimenyetso gitukura kimurika gisobanura iki?",
+          "options": {
+            "a": "Gutegereza",
+            "b": "Gutambuka gahoro",
+            "c": "Kunyuranaho",
+            "d": "Guhagarara"
+          },
+          "correct": "d",
+          "category": "Lights",
+          "difficulty": "easy",
+          "topic": "Traffic lights"
+        },
+        {
+          "question": "Umuvuduko ntarengwa mu nsisiro ni uwuhe niba nta cyapa gihari?",
+          "options": {
+            "a": "Km 40",
+            "b": "Km 50",
+            "c": "Km 60",
+            "d": "Km 80"
+          },
+          "correct": "b",
+          "category": "Speed limits",
+          "difficulty": "medium",
+          "topic": "Speeds"
+        }
+      ]
+    },
+    {
+      "name": "Update question (admin)",
+      "method": "PUT",
+      "url": "/api/questions/1",
+      "auth": "Bearer {{adminToken}}",
+      "body": {
+        "category": "General rules",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "name": "Delete question (admin, soft)",
+      "method": "DELETE",
+      "url": "/api/questions/1",
+      "auth": "Bearer {{adminToken}}",
+      "body": null
+    },
+    {
+      "name": "Start exam (GET)",
+      "method": "GET",
+      "url": "/api/exams/start",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Start exam (POST)",
+      "method": "POST",
+      "url": "/api/exams/start",
+      "auth": "none",
+      "body": null
+    },
+    {
+      "name": "Submit exam",
+      "method": "POST",
+      "url": "/api/exams/submit",
+      "auth": "Bearer {{token}}",
+      "body": {
+        "mode": "timed",
+        "startedAt": "2026-01-20T13:00:00.000Z",
+        "completedAt": "2026-01-20T13:15:00.000Z",
+        "answers": [
+          { "questionId": 1, "selected": "a" },
+          { "questionId": 2, "selected": "c" }
+        ]
+      }
+    },
+    {
+      "name": "My exam history",
+      "method": "GET",
+      "url": "/api/exams/mine",
+      "auth": "Bearer {{token}}",
+      "body": null
+    },
+    {
+      "name": "Exam stats (simple)",
+      "method": "GET",
+      "url": "/api/exams/stats",
+      "auth": "Bearer {{token}}",
+      "body": null
+    },
+    {
+      "name": "Analytics – performance",
+      "method": "GET",
+      "url": "/api/analytics/performance",
+      "auth": "Bearer {{token}}",
+      "body": null
+    },
+    {
+      "name": "Analytics – weak areas",
+      "method": "GET",
+      "url": "/api/analytics/weak-areas?limit=10",
+      "auth": "Bearer {{token}}",
+      "body": null
+    }
+  ]
+}
+
+
