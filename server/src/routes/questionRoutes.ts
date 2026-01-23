@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { Question } from "../models/Question";
-import { authMiddleware, requireRole, AuthRequest } from "../middleware/auth";
+import { authMiddleware, requireRole } from "../middleware/auth";
+import type { AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -84,6 +85,8 @@ const questionBodySchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   imageUrl: z.string().url().optional(),
   topic: z.string().optional(),
+  increment: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+  status: z.enum(["draft", "published"]).optional(),
 });
 
 // Create single question
@@ -97,7 +100,7 @@ router.post(
       if (!parsed.success) {
         return res
           .status(400)
-          .json({ message: "Invalid data", errors: parsed.error.errors });
+          .json({ message: "Invalid data", errors: parsed.error.issues });
       }
 
       const data = parsed.data;
@@ -106,10 +109,10 @@ router.post(
         ((await Question.findOne().sort({ id: -1 }).select("id"))?.id || 0) + 1;
 
       const created = await Question.create({
-        ...data,
+        ...(data as any),
         id: nextId,
         isDeleted: false,
-      });
+      } as any);
       res.status(201).json(created);
     } catch (err) {
       console.error(err);
@@ -134,7 +137,7 @@ router.post(
         if (!parsed.success) {
           return res
             .status(400)
-            .json({ message: "Invalid item in bulk import", errors: parsed.error.errors });
+          .json({ message: "Invalid item in bulk import", errors: parsed.error.issues });
         }
         items.push(parsed.data);
       }
@@ -145,10 +148,10 @@ router.post(
 
       const docs = items.map((q) => {
         const id = q.id ?? currentId++;
-        return { ...q, id, isDeleted: false };
+        return { ...(q as any), id, isDeleted: false } as any;
       });
 
-      const result = await Question.insertMany(docs);
+      const result = await Question.insertMany(docs as any);
       res.status(201).json({ inserted: result.length });
     } catch (err) {
       console.error(err);
@@ -172,12 +175,12 @@ router.put(
       if (!parsed.success) {
         return res
           .status(400)
-          .json({ message: "Invalid data", errors: parsed.error.errors });
+          .json({ message: "Invalid data", errors: parsed.error.issues });
       }
 
       const updated = await Question.findOneAndUpdate(
         { id: numericId },
-        { $set: parsed.data },
+        { $set: parsed.data as any },
         { new: true }
       );
       if (!updated) return res.status(404).json({ message: "Question not found" });

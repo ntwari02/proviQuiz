@@ -37,11 +37,11 @@ function parseOneBlock(block: string, id: number): QuestionDoc | null {
   );
   if (correctLineIdx === -1) return null;
 
-  const correctLine = lines[correctLineIdx];
+  const correctLine = lines[correctLineIdx]!;
   const mCorrect = correctLine.match(/Correct Answer:\s*([a-dA-D])/);
   if (!mCorrect) return null;
 
-  const correct = mCorrect[1].toLowerCase() as QuestionDoc["correct"];
+  const correct = mCorrect[1]!.toLowerCase() as QuestionDoc["correct"];
 
   const main = normalizeOptionMarkers(lines.slice(0, correctLineIdx).join(" "));
   const mA = main.match(/\ba\)/);
@@ -56,8 +56,8 @@ function parseOneBlock(block: string, id: number): QuestionDoc | null {
 
   let match: RegExpExecArray | null;
   while ((match = optPattern.exec(optionsText)) !== null) {
-    const key = match[1].toLowerCase() as keyof Options;
-    const value = match[2].trim();
+    const key = match[1]!.toLowerCase() as keyof Options;
+    const value = match[2]!.trim();
     options[key] = value;
   }
 

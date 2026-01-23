@@ -2,26 +2,26 @@ import { useMemo, useState } from "react";
 import { Alert, IconButton, InputAdornment } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import type { Control, FieldValues, Path } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import { RHFTextField } from "../forms/RHFTextField";
 
-type Props<TFieldValues extends FieldValues> = {
-  control: Control<TFieldValues>;
-  name: Path<TFieldValues>;
+type Props = {
+  control: Control<any>;
+  name: string;
   label: string;
   autoComplete?: string;
   disabled?: boolean;
   showCapsLockHint?: boolean;
 };
 
-export function RHFPasswordField<TFieldValues extends FieldValues>({
+export function RHFPasswordField({
   control,
   name,
   label,
   autoComplete,
   disabled,
   showCapsLockHint = true,
-}: Props<TFieldValues>) {
+}: Props) {
   const [visible, setVisible] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
 

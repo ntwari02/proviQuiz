@@ -16,7 +16,7 @@ import { useAuthStore } from "../store/authStore";
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(1, "Password is required"),
-  rememberMe: z.boolean().default(true),
+  rememberMe: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -108,7 +108,7 @@ export function LoginPage() {
               fullWidth
             />
 
-            <RHFPasswordField<FormValues>
+          <RHFPasswordField
               control={form.control}
               name="password"
               label="Password"

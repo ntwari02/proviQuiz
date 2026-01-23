@@ -25,8 +25,8 @@ const schema = z
       .refine((v) => /[A-Z]/.test(v), "Add an uppercase letter")
       .refine((v) => /\d/.test(v), "Add a number"),
     confirmPassword: z.string().min(1, "Confirm your password"),
-    acceptTerms: z.literal(true, { errorMap: () => ({ message: "You must accept the terms" }) }),
-    rememberMe: z.boolean().default(true),
+    acceptTerms: z.boolean().refine((v) => v === true, "You must accept the terms"),
+    rememberMe: z.boolean(),
   })
   .refine((d) => d.password === d.confirmPassword, {
     path: ["confirmPassword"],
@@ -130,7 +130,7 @@ export function RegisterPage() {
               disabled={mutation.isPending}
             />
 
-            <RHFPasswordField<FormValues>
+            <RHFPasswordField
               control={form.control}
               name="password"
               label="Password"
@@ -140,7 +140,7 @@ export function RegisterPage() {
 
             <PasswordStrength password={password} />
 
-            <RHFPasswordField<FormValues>
+            <RHFPasswordField
               control={form.control}
               name="confirmPassword"
               label="Confirm password"

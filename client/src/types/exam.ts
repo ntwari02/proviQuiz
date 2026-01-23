@@ -8,6 +8,7 @@ export type Question = {
   id: string;
   text: string;
   options: AnswerOption[];
+  explanation?: string;
 };
 
 export type ExamStatus = "idle" | "in_progress" | "completed";

@@ -1,16 +1,16 @@
 import { TextField, type TextFieldProps } from "@mui/material";
-import { Controller, type Control, type FieldValues, type Path } from "react-hook-form";
+import { Controller } from "react-hook-form";
 
-type Props<TFieldValues extends FieldValues> = Omit<TextFieldProps, "name" | "defaultValue"> & {
-  control: Control<TFieldValues>;
-  name: Path<TFieldValues>;
+type Props = Omit<TextFieldProps, "name" | "defaultValue"> & {
+  control: any;
+  name: string;
 };
 
-export function RHFTextField<TFieldValues extends FieldValues>({ control, name, helperText, ...props }: Props<TFieldValues>) {
+export function RHFTextField({ control, name, helperText, ...props }: Props) {
   return (
     <Controller
       control={control}
-      name={name}
+      name={name as any}
       render={({ field, fieldState }) => (
         <TextField
           {...props}

@@ -8,6 +8,12 @@ export interface UserDocument extends Document {
   role: "student" | "admin" | "superadmin";
   resetToken?: string | null;
   resetTokenExpires?: Date | null;
+  active?: boolean; // Activate/deactivate user
+  banned?: boolean; // Ban user (prevent login)
+  bannedReason?: string; // Reason for ban
+  bannedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema = new Schema<UserDocument>(
@@ -23,6 +29,10 @@ const UserSchema = new Schema<UserDocument>(
     },
     resetToken: { type: String, default: null },
     resetTokenExpires: { type: Date, default: null },
+    active: { type: Boolean, default: true },
+    banned: { type: Boolean, default: false },
+    bannedReason: { type: String },
+    bannedAt: { type: Date },
   },
   { timestamps: true }
 );

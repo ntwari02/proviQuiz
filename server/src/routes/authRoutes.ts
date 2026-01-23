@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { User } from "../models/User";
-import { signToken, AuthRequest, authMiddleware } from "../middleware/auth";
+import { signToken, authMiddleware } from "../middleware/auth";
+import type { AuthRequest } from "../middleware/auth";
 import { OAuth2Client } from "google-auth-library";
 
 const router = Router();
@@ -24,7 +25,7 @@ router.post("/register", async (req, res) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
     }
     const { email, password, name } = parsed.data;
 
@@ -34,7 +35,9 @@ router.post("/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, name, passwordHash, role: "student" });
+    const createBody: any = { email, passwordHash, role: "student" };
+    if (name) createBody.name = name;
+    const user: any = await User.create(createBody);
     const token = signToken(user.id);
 
     res.status(201).json({
@@ -124,15 +127,11 @@ router.get("/google/callback", async (req, res) => {
     const googleId = payload.sub;
     const name = payload.name;
 
-    let user = await User.findOne({ email });
+    let user: any = await User.findOne({ email });
     if (!user) {
-      user = await User.create({
-        email,
-        name,
-        googleId,
-        passwordHash: null,
-        role: "student",
-      });
+      const createBody: any = { email, googleId, passwordHash: null, role: "student" };
+      if (name) createBody.name = name;
+      user = await User.create(createBody);
     } else if (!user.googleId) {
       user.googleId = googleId;
       await user.save();
@@ -158,7 +157,7 @@ router.post("/login", async (req, res) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
     }
     const { email, password } = parsed.data;
 
@@ -203,7 +202,7 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const parsed = forgotSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
     }
     const { email } = parsed.data;
     const user = await User.findOne({ email });
@@ -240,7 +239,7 @@ router.post("/reset-password", async (req, res) => {
   try {
     const parsed = resetSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
     }
     const { token, newPassword } = parsed.data;
 

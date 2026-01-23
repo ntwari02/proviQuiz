@@ -5,7 +5,6 @@ import {
   CardContent,
   Chip,
   Divider,
-  LinearProgress,
   Stack,
   Typography,
 } from "@mui/material";
@@ -58,7 +57,6 @@ export function ResultsPage() {
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    setExpanded((prev) => ({ ...prev, [id]: true }));
     setActiveQuestionId(id);
   };
 
@@ -149,7 +147,7 @@ export function ResultsPage() {
 
       {/* Question list */}
       <Stack spacing={2}>
-        {filteredQuestions.map((q, index) => {
+        {filteredQuestions.map((q) => {
           const selected = selectedAnswers[q.id];
           const correctOption = q.options.find((o) => o.isCorrect);
           const status = selected ? (selected === correctOption?.id ? "correct" : "incorrect") : "unanswered";

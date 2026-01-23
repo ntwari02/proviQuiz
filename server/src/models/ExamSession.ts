@@ -16,6 +16,8 @@ export interface ExamSessionDocument extends Document {
   score: number;
   totalQuestions: number;
   answers: ExamAnswer[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const ExamAnswerSchema = new Schema<ExamAnswer>(

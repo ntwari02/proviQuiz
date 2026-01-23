@@ -11,6 +11,7 @@ type ServerQuestion = {
     d: string;
   };
   correct: "a" | "b" | "c" | "d";
+  explanation?: string;
 };
 
 type StartExamResponse = {
@@ -48,6 +49,7 @@ export async function startExamFromApi(): Promise<Question[]> {
       id: `q-${crypto.randomUUID()}`,
       text: stripLeadingNumbering(q.question),
       options: optionsArray,
+      explanation: q.explanation,
     };
   });
 }

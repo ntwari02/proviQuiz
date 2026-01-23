@@ -7,7 +7,7 @@ export type QuestionOptions = {
   d: string;
 };
 
-export interface QuestionDocument extends Document {
+export interface QuestionDocument extends Omit<Document, "increment"> {
   id: number;
   question: string;
   options: QuestionOptions;
@@ -18,6 +18,8 @@ export interface QuestionDocument extends Document {
   imageUrl?: string;
   topic?: string; // alias if you want to tag by topic later
   source?: string;
+  increment?: 1 | 2 | 3; // Section/Increment assignment
+  status?: "draft" | "published"; // Draft or Published
   isDeleted?: boolean;
 }
 
@@ -38,6 +40,8 @@ const QuestionSchema = new Schema<QuestionDocument>(
     imageUrl: { type: String },
     topic: { type: String },
     source: { type: String },
+    increment: { type: Number, enum: [1, 2, 3] },
+    status: { type: String, enum: ["draft", "published"], default: "draft" },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

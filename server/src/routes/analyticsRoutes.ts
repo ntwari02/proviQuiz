@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { AuthRequest, authMiddleware } from "../middleware/auth";
+import { authMiddleware } from "../middleware/auth";
+import type { AuthRequest } from "../middleware/auth";
 import { ExamSession } from "../models/ExamSession";
 
 const router = Router();
@@ -14,7 +15,7 @@ router.get("/performance", authMiddleware, async (req: AuthRequest, res) => {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Not authenticated" });
 
-    const matchUser = { user: { $eq: userId } };
+    const matchUser: any = { user: { $eq: userId } };
 
     // Overall stats
     const overallAgg = await ExamSession.aggregate([
@@ -38,7 +39,7 @@ router.get("/performance", authMiddleware, async (req: AuthRequest, res) => {
     };
 
     // Trend: last 10 exams with accuracy
-    const recentExams = await ExamSession.find({ user: userId })
+    const recentExams = await ExamSession.find({ user: userId as any })
       .sort({ createdAt: -1 })
       .limit(10)
       .select("score totalQuestions durationSeconds createdAt mode");
@@ -132,7 +133,7 @@ router.get("/weak-areas", authMiddleware, async (req: AuthRequest, res) => {
     if (!userId) return res.status(401).json({ message: "Not authenticated" });
 
     const limit = Math.min(Number(req.query.limit) || 10, 50);
-    const matchUser = { user: { $eq: userId } };
+    const matchUser: any = { user: { $eq: userId } };
 
     // Worst categories by accuracy (only categories with enough attempts)
     const worstCategories = await ExamSession.aggregate([

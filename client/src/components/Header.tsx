@@ -30,6 +30,8 @@ export function Header() {
     { label: "Demo", to: "/demo" },
   ];
 
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
   const authItems = token
     ? [{ label: "Logout", to: "#logout" }]
     : [
@@ -56,6 +58,11 @@ export function Header() {
                       {item.label}
                     </Button>
                   ))}
+                  {isAdmin && (
+                    <Button component={NavLink} to="/admin" variant="outlined" sx={{ ...linkSx, borderColor: "success.main", color: "success.main" }}>
+                      Admin
+                    </Button>
+                  )}
 
                   <Box sx={{ width: 10 }} />
 
@@ -131,6 +138,16 @@ export function Header() {
               <ListItemText primary={item.label} />
             </ListItemButton>
           ))}
+          {isAdmin && (
+            <ListItemButton
+              component={NavLink}
+              to="/admin"
+              onClick={() => setOpen(false)}
+              sx={{ color: "success.main" }}
+            >
+              <ListItemText primary="Admin Dashboard" />
+            </ListItemButton>
+          )}
 
           {token && (
             <Box px={2} pt={1} pb={0.5}>

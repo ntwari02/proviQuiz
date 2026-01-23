@@ -16,7 +16,7 @@ type AuthActions = {
   logout: () => void;
 };
 
-export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
+export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   token: null,
   user: null,
   bootstrapped: false,

@@ -2,7 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { Question } from "../models/Question";
 import { ExamSession } from "../models/ExamSession";
-import { AuthRequest, authMiddleware } from "../middleware/auth";
+import { authMiddleware } from "../middleware/auth";
+import type { AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const parsed = submitSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
     }
 
     const { mode, startedAt, completedAt, answers } = parsed.data;
@@ -81,7 +82,7 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
     });
 
     const exam = await ExamSession.create({
-      user: req.userId,
+      user: req.userId as any,
       mode,
       startedAt,
       completedAt,
@@ -107,7 +108,7 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
 // Get current user's exam history (for Dashboard)
 router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const exams = await ExamSession.find({ user: req.userId })
+    const exams = await ExamSession.find({ user: req.userId as any })
       .sort({ createdAt: -1 })
       .limit(50)
       .select("score totalQuestions durationSeconds mode createdAt");
@@ -122,7 +123,7 @@ router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
 // Simple stats: average score & exam count
 router.get("/stats", authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const exams = await ExamSession.find({ user: req.userId }).select(
+    const exams = await ExamSession.find({ user: req.userId as any }).select(
       "score totalQuestions"
     );
     if (exams.length === 0) {

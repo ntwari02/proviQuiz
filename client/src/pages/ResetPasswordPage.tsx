@@ -75,7 +75,7 @@ export function ResetPasswordPage() {
             disabled={mutation.isPending}
           />
 
-          <RHFPasswordField<FormValues>
+          <RHFPasswordField
             control={form.control}
             name="newPassword"
             label="New password"
@@ -85,7 +85,7 @@ export function ResetPasswordPage() {
 
           <PasswordStrength password={newPassword} />
 
-          <RHFPasswordField<FormValues>
+          <RHFPasswordField
             control={form.control}
             name="confirmPassword"
             label="Confirm new password"

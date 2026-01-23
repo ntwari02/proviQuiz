@@ -8,6 +8,12 @@ import questionRoutes from "./routes/questionRoutes";
 import examRoutes from "./routes/examRoutes";
 import userRoutes from "./routes/userRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import adminRoutes from "./routes/adminRoutes";
+import categoryRoutes from "./routes/categoryRoutes";
+import examConfigRoutes from "./routes/examConfigRoutes";
+import incrementRoutes from "./routes/incrementRoutes";
+import analyticsAdminRoutes from "./routes/analyticsAdminRoutes";
+import systemSettingsRoutes from "./routes/systemSettingsRoutes";
 
 dotenv.config();
 
@@ -31,6 +37,12 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin", categoryRoutes);
+app.use("/api/admin", examConfigRoutes);
+app.use("/api/admin", incrementRoutes);
+app.use("/api/admin", analyticsAdminRoutes);
+app.use("/api/admin", systemSettingsRoutes);
 
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI;
