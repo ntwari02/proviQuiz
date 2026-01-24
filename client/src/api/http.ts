@@ -2,7 +2,7 @@ import axios from "axios";
 import { readAuthToken } from "../auth/authStorage";
 
 export const API_BASE_URL =
-  ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? "http://localhost:5000/api";
+  ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? "https://proviquiz-2.onrender.com";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
