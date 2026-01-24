@@ -63,7 +63,18 @@ export function AdminLayout() {
   );
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <Box 
+      sx={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        overflow: "hidden", 
+        position: "relative",
+        "& footer": {
+          display: "none !important"
+        }
+      }}
+    >
       {/* Sidebar - Mobile Drawer */}
       <Box sx={{ display: { xs: "block", md: "none" } }}>
         <Drawer 
@@ -72,13 +83,14 @@ export function AdminLayout() {
           onClose={() => setOpen(false)} 
           PaperProps={{ sx: { width: drawerWidth } }}
           ModalProps={{
-            keepMounted: true, // Better mobile performance
+            keepMounted: true,
           }}
         >
           {drawer}
         </Drawer>
       </Box>
 
+      {/* Fixed Sidebar - Desktop */}
       <Box sx={{ display: { xs: "none", md: "block" }, position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 1200 }}>
         <Drawer
           variant="permanent"
@@ -89,10 +101,29 @@ export function AdminLayout() {
         </Drawer>
       </Box>
 
-      {/* Main content area - starts after sidebar */}
-      <Box sx={{ flex: 1, minWidth: 0, ml: { xs: 0, md: `${drawerWidth}px` }, display: "flex", flexDirection: "column" }}>
-        {/* Header - starts from sidebar end, full width */}
-        <AppBar position="sticky" elevation={0} color="transparent" sx={{ backdropFilter: "blur(10px)", zIndex: 1100 }}>
+      {/* Main content area - starts exactly where sidebar ends, fills to page end */}
+      <Box 
+        sx={{ 
+          flex: 1, 
+          minWidth: 0, 
+          ml: { xs: 0, md: `${drawerWidth}px` }, 
+          display: "flex", 
+          flexDirection: "column",
+          width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
+          minHeight: "100vh"
+        }}
+      >
+        {/* Header - starts from sidebar end, spans full remaining width */}
+        <AppBar 
+          position="sticky" 
+          elevation={0} 
+          color="transparent" 
+          sx={{ 
+            backdropFilter: "blur(10px)", 
+            zIndex: 1100,
+            width: "100%"
+          }}
+        >
           <Toolbar sx={{ borderBottom: "1px solid", borderColor: "divider", px: { xs: 2, sm: 3 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} width="100%">
               <Box display="flex" alignItems="center" gap={1}>
@@ -173,8 +204,22 @@ export function AdminLayout() {
           </Toolbar>
         </AppBar>
 
-        {/* Content - full width from sidebar end to page end */}
-        <Box sx={{ flex: 1, width: "100%", px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
+        {/* Content - full width from sidebar end to page end, no footer */}
+        <Box 
+          component="main"
+          sx={{ 
+            flex: 1, 
+            width: "100%", 
+            px: { xs: 2, md: 3 }, 
+            py: { xs: 2, md: 3 },
+            overflow: "auto",
+            bgcolor: "background.default",
+            minHeight: 0, // Allow flex child to shrink
+            "& footer": {
+              display: "none !important" // Hide any footer that might appear
+            }
+          }}
+        >
           <Outlet />
         </Box>
       </Box>
