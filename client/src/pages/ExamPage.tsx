@@ -48,19 +48,21 @@ export function ExamPage() {
   useEffect(() => {
     if (status !== "in_progress" || !startedAt) return;
 
-    const updateRemaining = () => {
+    const tick = () => {
       const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
       const rem = Math.max(0, durationSeconds - elapsedSeconds);
+      
       setRemaining(rem);
-      if (rem <= 0) {
+      
+      if (rem <= 0 && status === "in_progress") {
         submitExam();
         navigate("/results");
       }
     };
 
-    updateRemaining();
-    const id = setInterval(updateRemaining, 1000);
-    return () => clearInterval(id);
+    tick();
+    const timerId = setInterval(tick, 1000);
+    return () => clearInterval(timerId);
   }, [status, startedAt, durationSeconds, submitExam, navigate]);
 
   const currentQuestion = useMemo(

@@ -31,7 +31,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SearchIcon from "@mui/icons-material/Search";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useForm, Controller } from "react-hook-form";
@@ -113,49 +113,42 @@ function QuestionFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const getDefaultValues = () => {
-    if (question) {
-      return {
-        question: question.question,
-        options: question.options,
-        correct: question.correct,
-        explanation: question.explanation || "",
-        category: question.category || "",
-        topic: question.topic || "",
-        difficulty: question.difficulty || "medium",
-        increment: question.increment,
-        status: question.status || "draft",
-        imageUrl: question.imageUrl || "",
-      };
-    }
-    return {
+  const form = useForm<QuestionFormValues>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: {
       question: "",
       options: { a: "", b: "", c: "", d: "" },
-      correct: "a" as const,
+      correct: "a",
       explanation: "",
       category: "",
       topic: "",
-      difficulty: "medium" as const,
+      difficulty: "medium",
       increment: undefined,
-      status: "draft" as const,
+      status: "draft",
       imageUrl: "",
-    };
-  };
-
-  const form = useForm<QuestionFormValues>({
-    resolver: zodResolver(questionSchema),
-    defaultValues: getDefaultValues(),
+    },
   });
 
-  // Reset form when question changes
+  // Reset form when question changes or dialog opens
   useEffect(() => {
     if (open) {
-      const defaults = getDefaultValues();
+      const defaults = {
+        question: question?.question || "",
+        options: question?.options || { a: "", b: "", c: "", d: "" },
+        correct: (question?.correct as any) || "a",
+        explanation: question?.explanation || "",
+        category: question?.category || "",
+        topic: question?.topic || "",
+        difficulty: (question?.difficulty as any) || "medium",
+        increment: question?.increment,
+        status: (question?.status as any) || "draft",
+        imageUrl: question?.imageUrl || "",
+      };
       form.reset(defaults);
       setImagePreview(question?.imageUrl || null);
       setImageFile(null);
     }
-  }, [question?.id, open]);
+  }, [question?.id, open, form]);
 
   const createMutation = useMutation({
     mutationFn: createQuestion,
@@ -769,7 +762,12 @@ export function QuestionManagementPage() {
         </CardContent>
       </Card>
 
-      <QuestionFormDialog open={formOpen} onClose={() => { setFormOpen(false); setEditingQuestion(null); }} question={editingQuestion} />
+      <QuestionFormDialog 
+        key={editingQuestion?.id ?? "new"}
+        open={formOpen} 
+        onClose={() => { setFormOpen(false); setEditingQuestion(null); }} 
+        question={editingQuestion} 
+      />
 
       {viewingQuestion && (
         <Dialog open={!!viewingQuestion} onClose={() => setViewingQuestion(null)} maxWidth="md" fullWidth>

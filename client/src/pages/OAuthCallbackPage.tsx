@@ -13,14 +13,19 @@ export function OAuthCallbackPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"working" | "error">("working");
 
+  const tokenParam = search.get("token");
+  const redirectParam = search.get("redirect");
+
   useEffect(() => {
-    const token = search.get("token");
-    const redirect = search.get("redirect") || "/";
+    const token = tokenParam;
+    const redirect = redirectParam || "/";
 
     if (!token) {
       setStatus("error");
       return;
     }
+
+    let mounted = true;
 
     (async () => {
       try {
@@ -28,17 +33,22 @@ export function OAuthCallbackPage() {
         writeAuthToken(token, true);
 
         const user = await meApi();
+        if (!mounted) return;
+
         writeStoredUser(user);
         useAuthStore.getState().setAuth({ token, user }, true);
 
         navigate(redirect, { replace: true });
       } catch (err) {
+        if (!mounted) return;
         console.error(err);
         toast.error(getApiErrorMessage(err));
         setStatus("error");
       }
     })();
-  }, [navigate, search]);
+
+    return () => { mounted = false; };
+  }, [navigate, tokenParam, redirectParam]);
 
   if (status === "error") {
     return (
