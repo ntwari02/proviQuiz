@@ -20,7 +20,7 @@ type StartExamResponse = {
   limit: number;
 };
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "https://proviquiz-2.onrender.com";
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "https://proviquiz-2.onrender.com/api";
 
 function stripLeadingNumbering(text: string): string {
   // Removes patterns like "268. ", "268) ", "268 - ", "268: " at the start
