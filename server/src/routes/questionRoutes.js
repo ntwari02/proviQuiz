@@ -22,17 +22,40 @@ router.get("/random", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
-// GET /api/questions/all?limit=100&skip=0  (for Question Bank browsing)
+// GET /api/questions/all?limit=50&skip=0  (for Question Bank browsing)
 router.get("/all", async (req, res) => {
     try {
-        const limit = Math.min(Number(req.query.limit) || 100, 200);
+        const limit = Math.min(Number(req.query.limit) || 50, 200);
         const skip = Number(req.query.skip) || 0;
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : undefined;
+        // Build query with optional filters
+        const query = { isDeleted: { $ne: true } };
+        if (req.query.category)
+            query.category = req.query.category;
+        if (req.query.increment)
+            query.increment = Number(req.query.increment);
+        if (req.query.status)
+            query.status = req.query.status;
+        // Add search functionality
+        if (searchQuery && searchQuery.length > 0) {
+            const searchRegex = new RegExp(searchQuery, "i"); // Case-insensitive search
+            query.$or = [
+                { question: searchRegex },
+                { "options.a": searchRegex },
+                { "options.b": searchRegex },
+                { "options.c": searchRegex },
+                { "options.d": searchRegex },
+                { category: searchRegex },
+                { topic: searchRegex },
+                { explanation: searchRegex },
+            ];
+        }
         const [items, total] = await Promise.all([
-            Question_1.Question.find({ isDeleted: { $ne: true } })
+            Question_1.Question.find(query)
                 .sort({ id: 1 })
                 .skip(skip)
                 .limit(limit),
-            Question_1.Question.countDocuments({ isDeleted: { $ne: true } }),
+            Question_1.Question.countDocuments(query),
         ]);
         res.json({ items, total });
     }
@@ -77,7 +100,15 @@ const questionBodySchema = zod_1.z.object({
     explanation: zod_1.z.string().optional(),
     category: zod_1.z.string().optional(),
     difficulty: zod_1.z.enum(["easy", "medium", "hard"]).optional(),
-    imageUrl: zod_1.z.string().url().optional(),
+    imageUrl: zod_1.z
+        .union([zod_1.z.string().url(), zod_1.z.literal(""), zod_1.z.null()])
+        .optional()
+        .transform((val) => {
+        if (val === null || val === "" || (typeof val === "string" && val.trim() === "")) {
+            return null;
+        }
+        return val;
+    }),
     topic: zod_1.z.string().optional(),
     increment: zod_1.z.union([zod_1.z.literal(1), zod_1.z.literal(2), zod_1.z.literal(3)]).optional(),
     status: zod_1.z.enum(["draft", "published"]).optional(),
@@ -143,13 +174,33 @@ router.put("/:id", auth_1.authMiddleware, (0, auth_1.requireRole)(["admin", "sup
         if (Number.isNaN(numericId)) {
             return res.status(400).json({ message: "Invalid id" });
         }
-        const parsed = questionBodySchema.partial().safeParse(req.body);
+        // Handle imageUrl separately before validation (since it can be null)
+        const bodyForValidation = { ...req.body };
+        let shouldUnsetImageUrl = false;
+        if (req.body.hasOwnProperty("imageUrl")) {
+            if (req.body.imageUrl === null || req.body.imageUrl === "" || (typeof req.body.imageUrl === "string" && req.body.imageUrl.trim() === "")) {
+                shouldUnsetImageUrl = true;
+                delete bodyForValidation.imageUrl; // Remove from validation
+            }
+        }
+        // Validate the rest of the data
+        const parsed = questionBodySchema.partial().safeParse(bodyForValidation);
         if (!parsed.success) {
             return res
                 .status(400)
                 .json({ message: "Invalid data", errors: parsed.error.issues });
         }
-        const updated = await Question_1.Question.findOneAndUpdate({ id: numericId }, { $set: parsed.data }, { new: true });
+        const updateData = { ...parsed.data };
+        const updateQuery = {};
+        // Handle imageUrl deletion - explicitly unset it
+        if (shouldUnsetImageUrl) {
+            updateQuery.$unset = { imageUrl: "" };
+        }
+        // Add remaining fields to $set
+        if (Object.keys(updateData).length > 0) {
+            updateQuery.$set = updateData;
+        }
+        const updated = await Question_1.Question.findOneAndUpdate({ id: numericId }, Object.keys(updateQuery).length > 0 ? updateQuery : { $set: updateData }, { new: true });
         if (!updated)
             return res.status(404).json({ message: "Question not found" });
         res.json(updated);

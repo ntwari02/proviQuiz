@@ -230,6 +230,46 @@ router.patch("/users/:id/ban", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+// POST /api/admin/users - Create new user (admin action)
+const createUserSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(6),
+    name: zod_1.z.string().min(1).optional(),
+    role: zod_1.z.enum(["student", "admin", "superadmin"]).default("student"),
+});
+router.post("/users", async (req, res) => {
+    try {
+        const parsed = createUserSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: "Invalid data", errors: parsed.error.issues });
+        }
+        const { email, password, name, role } = parsed.data;
+        const existing = await User_1.User.findOne({ email: email.toLowerCase() });
+        if (existing) {
+            return res.status(409).json({ message: "Email already registered" });
+        }
+        const passwordHash = await bcryptjs_1.default.hash(password, 10);
+        const createBody = {
+            email: email.toLowerCase(),
+            passwordHash,
+            role: role || "student",
+        };
+        if (name)
+            createBody.name = name;
+        const user = await User_1.User.create(createBody);
+        res.status(201).json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            createdAt: user.createdAt,
+        });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 // POST /api/admin/users/:id/reset-password - Reset user password (admin action)
 const resetPasswordSchema = zod_1.z.object({
     newPassword: zod_1.z.string().min(6),

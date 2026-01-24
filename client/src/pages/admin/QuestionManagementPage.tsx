@@ -11,6 +11,7 @@ import {
   FormControl,
   FormControlLabel,
   IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
@@ -29,6 +30,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import SearchIcon from "@mui/icons-material/Search";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -67,12 +69,12 @@ const questionSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   increment: z.enum([1, 2, 3]).optional(),
   status: z.enum(["draft", "published"]).optional(),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  imageUrl: z.union([z.string().url("Must be a valid URL"), z.literal("")]).optional(),
 });
 
 type QuestionFormValues = z.infer<typeof questionSchema>;
 
-async function listQuestions(params: { limit: number; skip: number; category?: string; increment?: number; status?: string }) {
+async function listQuestions(params: { limit: number; skip: number; q?: string; category?: string; increment?: number; status?: string }) {
   const res = await api.get<{ items: Question[]; total: number }>("/questions/all", { params });
   return res.data;
 }
@@ -83,8 +85,14 @@ async function createQuestion(data: QuestionFormValues) {
 }
 
 async function updateQuestion(id: number, data: Partial<QuestionFormValues>) {
-  const res = await api.put<Question>(`/questions/${id}`, data);
-  return res.data;
+  try {
+    const res = await api.put<Question>(`/questions/${id}`, data);
+    return res.data;
+  } catch (error: any) {
+    console.error("Update error:", error.response?.data || error.message);
+    console.error("Data being sent:", data);
+    throw error;
+  }
 }
 
 async function deleteQuestion(id: number) {
@@ -147,7 +155,7 @@ function QuestionFormDialog({
       setImagePreview(question?.imageUrl || null);
       setImageFile(null);
     }
-  }, [question, open, form]);
+  }, [question?.id, open]);
 
   const createMutation = useMutation({
     mutationFn: createQuestion,
@@ -184,9 +192,9 @@ function QuestionFormDialog({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size must be less than 5MB");
+    // Validate file size (max 50MB - server now accepts this)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Image size must be less than 50MB");
       return;
     }
 
@@ -207,10 +215,47 @@ function QuestionFormDialog({
   };
 
   const onSubmit = (values: QuestionFormValues) => {
+    // Clean up the data before sending
+    const cleanedData: any = {
+      question: values.question,
+      options: values.options,
+      correct: values.correct,
+    };
+
+    // Add optional fields only if they have values
+    if (values.explanation && values.explanation.trim() !== "") {
+      cleanedData.explanation = values.explanation;
+    }
+    if (values.category && values.category.trim() !== "") {
+      cleanedData.category = values.category;
+    }
+    if (values.topic && values.topic.trim() !== "") {
+      cleanedData.topic = values.topic;
+    }
+    if (values.difficulty) {
+      cleanedData.difficulty = values.difficulty;
+    }
+    if (values.increment !== undefined) {
+      cleanedData.increment = values.increment;
+    }
+    if (values.status) {
+      cleanedData.status = values.status;
+    }
+
     if (question) {
-      updateMutation.mutate(values);
+      // For updates, explicitly set imageUrl to null if it was removed (empty string)
+      if (!values.imageUrl || values.imageUrl.trim() === "") {
+        cleanedData.imageUrl = null;
+      } else {
+        cleanedData.imageUrl = values.imageUrl;
+      }
+      updateMutation.mutate(cleanedData);
     } else {
-      createMutation.mutate(values);
+      // For new questions, only include imageUrl if it has a value
+      if (values.imageUrl && values.imageUrl.trim() !== "") {
+        cleanedData.imageUrl = values.imageUrl;
+      }
+      createMutation.mutate(cleanedData as QuestionFormValues);
     }
   };
 
@@ -352,22 +397,28 @@ function QuestionFormDialog({
                     </Typography>
                   </Box>
                 )}
-                <TextField
-                  {...form.register("imageUrl")}
-                  label="Or enter image URL"
-                  fullWidth
-                  placeholder="https://example.com/image.jpg"
-                  error={!!form.formState.errors.imageUrl}
-                  helperText={form.formState.errors.imageUrl?.message || "Leave empty if uploading a file"}
-                  onChange={(e) => {
-                    form.setValue("imageUrl", e.target.value);
-                    if (e.target.value) {
-                      setImagePreview(e.target.value);
-                      setImageFile(null);
-                    } else if (!imageFile) {
-                      setImagePreview(null);
-                    }
-                  }}
+                <Controller
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Or enter image URL"
+                      fullWidth
+                      placeholder="https://example.com/image.jpg"
+                      error={!!form.formState.errors.imageUrl}
+                      helperText={form.formState.errors.imageUrl?.message || "Leave empty if uploading a file"}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        if (e.target.value) {
+                          setImagePreview(e.target.value);
+                          setImageFile(null);
+                        } else if (!imageFile) {
+                          setImagePreview(null);
+                        }
+                      }}
+                    />
+                  )}
                 />
               </Stack>
             </Box>
@@ -451,20 +502,22 @@ function QuestionFormDialog({
 export function QuestionManagementPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [incrementFilter, setIncrementFilter] = useState<number | "">("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [viewingQuestion, setViewingQuestion] = useState<Question | null>(null);
-  const limit = 25;
+  const limit = 50;
 
   const query = useQuery({
-    queryKey: ["admin", "questions", { page, limit, categoryFilter, incrementFilter, statusFilter }],
+    queryKey: ["admin", "questions", { page, limit, searchQuery, categoryFilter, incrementFilter, statusFilter }],
     queryFn: () =>
       listQuestions({
         skip: page * limit,
         limit,
+        q: searchQuery.trim() || undefined,
         category: categoryFilter || undefined,
         increment: typeof incrementFilter === "number" ? incrementFilter : undefined,
         status: statusFilter || undefined,
@@ -550,16 +603,34 @@ export function QuestionManagementPage() {
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <Stack spacing={2}>
             <TextField
-              label="Filter by Category"
-              value={categoryFilter}
+              label="Search questions"
+              placeholder="Search by question text, options, category, or topic..."
+              value={searchQuery}
               onChange={(e) => {
                 setPage(0);
-                setCategoryFilter(e.target.value);
+                setSearchQuery(e.target.value);
               }}
               fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+              }}
             />
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <TextField
+                label="Filter by Category"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setPage(0);
+                  setCategoryFilter(e.target.value);
+                }}
+                fullWidth
+              />
             <FormControl fullWidth>
               <InputLabel>Increment</InputLabel>
               <Select
@@ -591,9 +662,10 @@ export function QuestionManagementPage() {
                 <MenuItem value="published">Published</MenuItem>
               </Select>
             </FormControl>
-            <Button variant="outlined" onClick={() => { setCategoryFilter(""); setIncrementFilter(""); setStatusFilter(""); setPage(0); }}>
-              Clear Filters
-            </Button>
+              <Button variant="outlined" onClick={() => { setSearchQuery(""); setCategoryFilter(""); setIncrementFilter(""); setStatusFilter(""); setPage(0); }}>
+                Clear Filters
+              </Button>
+            </Stack>
           </Stack>
         </CardContent>
       </Card>
@@ -668,18 +740,27 @@ export function QuestionManagementPage() {
             ))}
           </Stack>
 
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mt={3}>
-            <Typography variant="caption" color="text.secondary">
-              Showing {items.length} of {total}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mt={3} flexWrap="wrap" gap={2}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {page * limit + 1} - {Math.min(page * limit + items.length, total)} of {total} questions
             </Typography>
-            <Stack direction="row" gap={1}>
-              <Button variant="outlined" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0 || query.isFetching}>
-                Prev
+            <Stack direction="row" gap={1} alignItems="center">
+              <Button 
+                variant="outlined" 
+                onClick={() => setPage((p) => Math.max(0, p - 1))} 
+                disabled={page <= 0 || query.isFetching}
+                size="small"
+              >
+                Previous
               </Button>
+              <Typography variant="body2" sx={{ px: 2, minWidth: 100, textAlign: "center" }}>
+                Page {page + 1} of {Math.max(1, Math.ceil(total / limit))}
+              </Typography>
               <Button
                 variant="outlined"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={items.length < limit || query.isFetching}
+                disabled={page * limit + items.length >= total || query.isFetching}
+                size="small"
               >
                 Next
               </Button>

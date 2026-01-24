@@ -37,29 +37,29 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route
-          path="/admin"
-          element={
-            <RequireAuth>
-              <RequireRole roles={["admin", "superadmin"]}>
-                <AdminLayout />
-              </RequireRole>
-            </RequireAuth>
-          }
-        >
-          <Route index element={<AdminDashboardPage />} />
-          <Route path="users" element={<EnhancedUserManagementPage />} />
-          <Route path="exams" element={<AdminExamsPage />} />
-          <Route path="questions" element={<QuestionManagementPage />} />
-          <Route path="categories" element={<CategoryTopicManagementPage />} />
-          <Route path="increments" element={<IncrementManagementPage />} />
-          <Route path="exam-config" element={<ExamCreationPage />} />
-          <Route path="analytics" element={<AnalyticsDashboardPage />} />
-          <Route path="bulk" element={<BulkImportExportPage />} />
-          <Route path="settings" element={<SystemSettingsPage />} />
-        </Route>
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+      <Route
+        path="/admin/*"
+        element={
+          <RequireAuth>
+            <RequireRole roles={["admin", "superadmin"]}>
+              <AdminLayout />
+            </RequireRole>
+          </RequireAuth>
+        }
+      >
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="users" element={<EnhancedUserManagementPage />} />
+        <Route path="exams" element={<AdminExamsPage />} />
+        <Route path="questions" element={<QuestionManagementPage />} />
+        <Route path="categories" element={<CategoryTopicManagementPage />} />
+        <Route path="increments" element={<IncrementManagementPage />} />
+        <Route path="exam-config" element={<ExamCreationPage />} />
+        <Route path="analytics" element={<AnalyticsDashboardPage />} />
+        <Route path="bulk" element={<BulkImportExportPage />} />
+        <Route path="settings" element={<SystemSettingsPage />} />
       </Route>
     </Routes>
   );

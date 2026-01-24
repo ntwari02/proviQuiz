@@ -9,6 +9,7 @@ export type Question = {
   text: string;
   options: AnswerOption[];
   explanation?: string;
+  imageUrl?: string;
 };
 
 export type ExamStatus = "idle" | "in_progress" | "completed";

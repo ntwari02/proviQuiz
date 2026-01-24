@@ -248,6 +248,23 @@ export function ExamPage() {
             {currentQuestion.text}
           </Typography>
 
+          {currentQuestion.imageUrl && (
+            <Box
+              component="img"
+              src={currentQuestion.imageUrl}
+              alt="Question image"
+              sx={{
+                maxWidth: "100%",
+                maxHeight: 400,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                mb: 2,
+                mt: 1,
+              }}
+            />
+          )}
+
           <RadioGroup
             value={selectedAnswers[currentQuestion.id] ?? ""}
             onChange={(_e, value) => selectAnswer(currentQuestion.id, value)}

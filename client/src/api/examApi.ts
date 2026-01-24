@@ -12,6 +12,7 @@ type ServerQuestion = {
   };
   correct: "a" | "b" | "c" | "d";
   explanation?: string;
+  imageUrl?: string;
 };
 
 type StartExamResponse = {
@@ -50,6 +51,7 @@ export async function startExamFromApi(): Promise<Question[]> {
       text: stripLeadingNumbering(q.question),
       options: optionsArray,
       explanation: q.explanation,
+      imageUrl: q.imageUrl,
     };
   });
 }
