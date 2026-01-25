@@ -33,7 +33,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { getApiErrorMessage } from "../../api/http";
 import {
   adminExamConfigsApi,
-  adminExamConfigApi,
   adminCreateExamConfigApi,
   adminUpdateExamConfigApi,
   adminDeleteExamConfigApi,
@@ -44,7 +43,7 @@ import {
 const examConfigSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  increments: z.array(z.enum([1, 2, 3])).min(1, "Select at least one increment"),
+  increments: z.array(z.union([z.literal(1), z.literal(2), z.literal(3)])).min(1, "Select at least one increment"),
   questionCount: z.number().int().positive("Question count must be positive"),
   timeLimitMinutes: z.number().int().positive().optional(),
   passMarkPercent: z.number().int().min(0).max(100),
@@ -106,7 +105,7 @@ function ExamConfigFormDialog({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<ExamConfigFormValues>) => adminUpdateExamConfigApi({ id: config!._id, data }),
+    mutationFn: (data: Partial<ExamConfigFormValues>) => adminUpdateExamConfigApi({ id: config!._id, data: data as Partial<ExamConfig> }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "exam-configs"] });
       toast.success("Exam configuration updated");
@@ -119,7 +118,18 @@ function ExamConfigFormDialog({
     if (config) {
       updateMutation.mutate(values);
     } else {
-      createMutation.mutate(values);
+      // Convert form values to API format (increments is already number[])
+      createMutation.mutate({
+        name: values.name,
+        description: values.description,
+        increments: values.increments,
+        questionCount: values.questionCount,
+        timeLimitMinutes: values.timeLimitMinutes,
+        passMarkPercent: values.passMarkPercent,
+        randomizeQuestions: values.randomizeQuestions,
+        randomizeAnswers: values.randomizeAnswers,
+        enabled: values.enabled,
+      });
     }
   };
 
@@ -154,20 +164,26 @@ function ExamConfigFormDialog({
                 name="increments"
                 render={({ field }) => (
                   <Select
-                    {...field}
                     multiple
                     label="Select Increments"
+                    value={field.value.map(String)}
+                    onChange={(e) => {
+                      const values = Array.isArray(e.target.value) 
+                        ? e.target.value.map(Number).filter((v): v is 1 | 2 | 3 => [1, 2, 3].includes(v))
+                        : [];
+                      field.onChange(values);
+                    }}
                     renderValue={(selected) => selected.map((v) => `Increment ${v}`).join(", ")}
                   >
-                    <MenuItem value={1}>
+                    <MenuItem value="1">
                       <Checkbox checked={selectedIncrements.includes(1)} />
                       Increment 1
                     </MenuItem>
-                    <MenuItem value={2}>
+                    <MenuItem value="2">
                       <Checkbox checked={selectedIncrements.includes(2)} />
                       Increment 2
                     </MenuItem>
-                    <MenuItem value={3}>
+                    <MenuItem value="3">
                       <Checkbox checked={selectedIncrements.includes(3)} />
                       Increment 3
                     </MenuItem>
@@ -255,16 +271,9 @@ export function ExamCreationPage() {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ExamConfig | null>(null);
-  const [previewConfig, setPreviewConfig] = useState<ExamConfig | null>(null);
   const [previewData, setPreviewData] = useState<any>(null);
 
   const query = useQuery({ queryKey: ["admin", "exam-configs"], queryFn: adminExamConfigsApi });
-
-  const previewQuery = useQuery({
-    queryKey: ["admin", "exam-configs", previewConfig?._id, "preview"],
-    queryFn: () => previewExamConfig(previewConfig!._id),
-    enabled: !!previewConfig,
-  });
 
   const deleteMutation = useMutation({
     mutationFn: adminDeleteExamConfigApi,
@@ -287,7 +296,6 @@ export function ExamCreationPage() {
   };
 
   const handlePreview = async (config: ExamConfig) => {
-    setPreviewConfig(config);
     const data = await adminPreviewExamConfigApi(config._id);
     setPreviewData(data);
   };
@@ -372,7 +380,7 @@ export function ExamCreationPage() {
       <ExamConfigFormDialog open={formOpen} onClose={() => { setFormOpen(false); setEditingConfig(null); }} config={editingConfig} />
 
       {previewData && (
-        <Dialog open={!!previewData} onClose={() => { setPreviewData(null); setPreviewConfig(null); }} maxWidth="md" fullWidth>
+        <Dialog open={!!previewData} onClose={() => { setPreviewData(null); }} maxWidth="md" fullWidth>
           <DialogTitle>Preview: {previewData.config.name}</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -405,7 +413,7 @@ export function ExamCreationPage() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => { setPreviewData(null); setPreviewConfig(null); }}>Close</Button>
+            <Button onClick={() => { setPreviewData(null); }}>Close</Button>
           </DialogActions>
         </Dialog>
       )}

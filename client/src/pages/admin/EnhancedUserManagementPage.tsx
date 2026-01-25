@@ -19,8 +19,6 @@ import {
   Tab,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import BlockIcon from "@mui/icons-material/Block";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import AddIcon from "@mui/icons-material/Add";
 import { useForm, Controller } from "react-hook-form";

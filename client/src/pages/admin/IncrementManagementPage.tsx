@@ -9,17 +9,14 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  IconButton,
   Stack,
   Switch,
-  TextField,
   Typography,
   Tabs,
   Tab,
   Checkbox,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +26,6 @@ import {
   adminIncrementQuestionsApi,
   adminIncrementStatsApi,
   adminAssignQuestionsApi,
-  adminReorderQuestionsApi,
   adminLockIncrementApi,
 } from "../../api/adminApi";
 import { api } from "../../api/http";
@@ -41,13 +37,6 @@ type Question = {
   topic?: string;
   status?: "draft" | "published";
   increment?: 1 | 2 | 3;
-};
-
-type IncrementStats = {
-  increment: 1 | 2 | 3;
-  total: number;
-  published: number;
-  draft: number;
 };
 
 // Using API functions from adminApi
@@ -86,14 +75,6 @@ function IncrementTab({ increment }: { increment: 1 | 2 | 3 }) {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   });
 
-  const reorderMutation = useMutation({
-    mutationFn: (questionIds: number[]) => adminReorderQuestionsApi({ increment, questionIds }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "increments", increment, "questions"] });
-      toast.success("Questions reordered");
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  });
 
   const lockMutation = useMutation({
     mutationFn: (locked: boolean) => adminLockIncrementApi({ increment, locked }),
@@ -119,7 +100,7 @@ function IncrementTab({ increment }: { increment: 1 | 2 | 3 }) {
   };
 
   const handleSelectAll = () => {
-    const available = (allQuestionsQuery.data ?? []).filter((q) => q.increment !== increment).map((q) => q.id);
+    const available = (allQuestionsQuery.data ?? []).filter((q) => q.increment === undefined || q.increment !== increment).map((q) => q.id);
     setSelectedQuestionIds(available);
   };
 
@@ -187,7 +168,7 @@ function IncrementTab({ increment }: { increment: 1 | 2 | 3 }) {
           <Stack spacing={1} sx={{ mt: 1, maxHeight: 400, overflow: "auto" }}>
             {allQuestionsQuery.isLoading && <Typography>Loading questions…</Typography>}
             {(allQuestionsQuery.data ?? [])
-              .filter((q) => q.increment !== increment)
+              .filter((q) => q.increment === undefined || q.increment !== increment)
               .map((q) => (
                 <FormControlLabel
                   key={q.id}

@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -18,9 +17,7 @@ import {
   Stack,
   TextField,
   Typography,
-  Checkbox,
   Tooltip,
-  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -31,7 +28,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SearchIcon from "@mui/icons-material/Search";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useForm, Controller } from "react-hook-form";
@@ -67,7 +64,7 @@ const questionSchema = z.object({
   category: z.string().optional(),
   topic: z.string().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-  increment: z.enum([1, 2, 3]).optional(),
+  increment: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   status: z.enum(["draft", "published"]).optional(),
   imageUrl: z.union([z.string().url("Must be a valid URL"), z.literal("")]).optional(),
 });
@@ -132,16 +129,16 @@ function QuestionFormDialog({
   // Reset form when question changes or dialog opens
   useEffect(() => {
     if (open) {
-      const defaults = {
+      const defaults: QuestionFormValues = {
         question: question?.question || "",
         options: question?.options || { a: "", b: "", c: "", d: "" },
-        correct: (question?.correct as any) || "a",
+        correct: (question?.correct as "a" | "b" | "c" | "d") || "a",
         explanation: question?.explanation || "",
         category: question?.category || "",
         topic: question?.topic || "",
-        difficulty: (question?.difficulty as any) || "medium",
-        increment: question?.increment,
-        status: (question?.status as any) || "draft",
+        difficulty: (question?.difficulty as "easy" | "medium" | "hard") || "medium",
+        increment: question?.increment as 1 | 2 | 3 | undefined,
+        status: (question?.status as "draft" | "published") || "draft",
         imageUrl: question?.imageUrl || "",
       };
       form.reset(defaults);
@@ -582,7 +579,7 @@ export function QuestionManagementPage() {
           </Typography>
         </Box>
         <Stack direction="row" gap={1}>
-          <Button variant="outlined" startIcon={<FileUploadIcon />} onClick={() => toast.info("Bulk import coming soon")}>
+          <Button variant="outlined" startIcon={<FileUploadIcon />} onClick={() => toast("Bulk import coming soon", { icon: "ℹ️" })}>
             Import
           </Button>
           <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport} disabled={items.length === 0}>
@@ -627,7 +624,7 @@ export function QuestionManagementPage() {
             <FormControl fullWidth>
               <InputLabel>Increment</InputLabel>
               <Select
-                value={incrementFilter}
+                value={incrementFilter === "" ? "" : String(incrementFilter)}
                 onChange={(e) => {
                   setPage(0);
                   setIncrementFilter(e.target.value === "" ? "" : Number(e.target.value));
@@ -635,9 +632,9 @@ export function QuestionManagementPage() {
                 label="Increment"
               >
                 <MenuItem value="">All</MenuItem>
-                <MenuItem value={1}>Increment 1</MenuItem>
-                <MenuItem value={2}>Increment 2</MenuItem>
-                <MenuItem value={3}>Increment 3</MenuItem>
+                <MenuItem value="1">Increment 1</MenuItem>
+                <MenuItem value="2">Increment 2</MenuItem>
+                <MenuItem value="3">Increment 3</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
