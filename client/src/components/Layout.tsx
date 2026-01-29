@@ -1,11 +1,13 @@
 import { Box, Button, Container } from "@mui/material";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 
 export function Layout() {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   const [showCookieBanner, setShowCookieBanner] = useState(true);
 
   useEffect(() => {
@@ -34,7 +36,13 @@ export function Layout() {
       <Box className="relative">
         <Header />
 
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: { xs: 4, sm: 6 } }}>
+        <Container
+          maxWidth="lg"
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: isHome ? 0 : { xs: 4, sm: 6 },
+          }}
+        >
           <Outlet />
         </Container>
 

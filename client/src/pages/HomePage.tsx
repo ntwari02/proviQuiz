@@ -5,7 +5,7 @@ export function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="mx-auto flex items-center text-slate-900 dark:text-slate-100">
+    <div className="mx-auto flex min-h-[calc(100vh-160px)] items-stretch text-slate-900 dark:text-slate-100">
       <div className="grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-2">
         {/* Left */}
         <div className="space-y-6">
@@ -52,10 +52,18 @@ export function HomePage() {
         </div>
 
         {/* Right */}
-        <div className="relative">
-          <div className="relative mx-auto aspect-[4/3] w-full max-w-xl">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-700 shadow-2xl" />
-            <div className="absolute inset-2 rounded-3xl bg-gradient-to-br from-white/10 to-white/5 ring-1 ring-white/10" />
+        <div className="relative mt-6 h-64 w-full lg:mt-0 lg:h-full">
+          <div className="relative h-full w-full">
+            {/* Background video from public folder */}
+            <video
+              className="absolute inset-0 h-full w-full object-cover bg-slate-900 shadow-2xl"
+              src="/A Person Driving a Car · Free Stock Video.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 to-slate-900/70" />
 
             {/* Floating cards */}
             <div className="absolute left-6 top-6 w-[240px] animate-[float_6s_ease-in-out_infinite] rounded-2xl bg-white/90 dark:bg-slate-900/90 p-4 shadow-xl backdrop-blur">

@@ -44,56 +44,69 @@ export function Header() {
       <Toolbar sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
         <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
           <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
+            {/* Left: logo */}
             <Box component={NavLink} to="/" sx={{ textDecoration: "none", color: "inherit" }}>
               <Typography fontWeight={900} letterSpacing={-0.5}>
                 PROVIQUIZ
               </Typography>
             </Box>
 
+            {/* Center: main navigation (desktop only) */}
+            {!isMobile && (
+              <Box display="flex" alignItems="center" gap={1} sx={{ flexGrow: 1, justifyContent: "center" }}>
+                {navItems.map((item) => (
+                  <Button
+                    key={item.to}
+                    component={NavLink}
+                    to={item.to}
+                    variant={item.to === "/exam" ? "outlined" : "text"}
+                    sx={linkSx}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+                {isAdmin && (
+                  <Button
+                    component={NavLink}
+                    to="/admin"
+                    variant="outlined"
+                    sx={{ ...linkSx, borderColor: "success.main", color: "success.main" }}
+                  >
+                    Admin
+                  </Button>
+                )}
+              </Box>
+            )}
+
+            {/* Right: user, auth actions, theme, mobile menu */}
             <Box display="flex" alignItems="center" gap={1}>
-              {!isMobile && (
-                <>
-                  {navItems.map((item) => (
-                    <Button key={item.to} component={NavLink} to={item.to} variant={item.to === "/exam" ? "outlined" : "text"} sx={linkSx}>
-                      {item.label}
-                    </Button>
-                  ))}
-                  {isAdmin && (
-                    <Button component={NavLink} to="/admin" variant="outlined" sx={{ ...linkSx, borderColor: "success.main", color: "success.main" }}>
-                      Admin
-                    </Button>
-                  )}
-
-                  <Box sx={{ width: 10 }} />
-
-                  {token && (
-                    <Typography variant="body2" sx={{ px: 1.5, fontWeight: 800 }} noWrap>
-                      {user?.name || user?.email || "Account"}
-                    </Typography>
-                  )}
-
-                  {!token ? (
-                    <>
-                      <Button component={NavLink} to="/login" variant="text" sx={linkSx}>
-                        Sign in
-                      </Button>
-                      <Button component={NavLink} to="/register" variant="contained" sx={linkSx}>
-                        Create account
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      sx={linkSx}
-                      onClick={() => {
-                        logout();
-                      }}
-                    >
-                      Logout
-                    </Button>
-                  )}
-                </>
+              {!isMobile && token && (
+                <Typography variant="body2" sx={{ px: 1.5, fontWeight: 800 }} noWrap>
+                  {user?.name || user?.email || "Account"}
+                </Typography>
               )}
+
+              {!isMobile &&
+                (!token ? (
+                  <>
+                    <Button component={NavLink} to="/login" variant="text" sx={linkSx}>
+                      Sign in
+                    </Button>
+                    <Button component={NavLink} to="/register" variant="contained" sx={linkSx}>
+                      Create account
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outlined"
+                    sx={linkSx}
+                    onClick={() => {
+                      logout();
+                    }}
+                  >
+                    Logout
+                  </Button>
+                ))}
 
               <Tooltip title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
                 <IconButton

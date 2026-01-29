@@ -189,6 +189,22 @@ export function ResultsPage() {
                 </Stack>
 
                 <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+                  {q.imageUrl && (
+                    <Box
+                      component="img"
+                      src={q.imageUrl}
+                      alt="Question image"
+                      sx={{
+                        maxWidth: "100%",
+                        maxHeight: 400,
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        mb: 2,
+                        mt: 1,
+                      }}
+                    />
+                  )}
                   <Stack spacing={0.5}>
                     {q.options.map((o) => {
                       const isSelected = selected === o.id;

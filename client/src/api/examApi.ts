@@ -1,5 +1,5 @@
-import axios from "axios";
 import type { Question } from "../types/exam";
+import { api } from "./http";
 
 type ServerQuestion = {
   id: number;
@@ -20,15 +20,13 @@ type StartExamResponse = {
   limit: number;
 };
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "https://proviquiz-2.onrender.com/api";
-
 function stripLeadingNumbering(text: string): string {
   // Removes patterns like "268. ", "268) ", "268 - ", "268: " at the start
   return text.replace(/^\s*\d+\s*([.)\-:])\s*/u, "").trim();
 }
 
 export async function startExamFromApi(): Promise<Question[]> {
-  const res = await axios.get<StartExamResponse>(`${API_BASE_URL}/exams/start`);
+  const res = await api.get<StartExamResponse>("/exams/start");
 
   // Ensure no duplicates (defensive: backend $sample should already be unique)
   const uniqueById = new Map<number, ServerQuestion>();
