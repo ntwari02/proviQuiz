@@ -39,7 +39,7 @@ export async function startExamFromApi(options?: StartExamOptions): Promise<Ques
   });
 
   // In dev, log how many questions the server says are available
-  if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") {
+  if (import.meta.env.DEV) {
     console.log("[startExamFromApi]", {
       options,
       limit: res.data.limit,

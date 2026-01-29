@@ -1,4 +1,4 @@
-import { Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, AppBar, Menu, MenuItem, Tooltip, Grow, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
+import { Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, AppBar, Menu, MenuItem, Tooltip, Grow } from "@mui/material";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -24,17 +24,10 @@ const drawerWidth = 260;
 export function AdminLayout() {
   const [open, setOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const colorMode = useUiStore((s) => s.colorMode);
   const toggleColorMode = useUiStore((s) => s.toggleColorMode);
-
-  const handleLogoutConfirm = () => {
-    setLogoutDialogOpen(false);
-    setUserMenuAnchor(null);
-    logout();
-  };
 
   const items = useMemo(
     () => [
