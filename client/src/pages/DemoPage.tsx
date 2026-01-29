@@ -12,7 +12,7 @@ export function DemoPage() {
 
       <Card variant="outlined" sx={{ borderRadius: 3 }}>
         <CardContent>
-          <Typography fontWeight={800}>Sample question (placeholder)</Typography>
+          <Typography fontWeight={800}>Sample questions (placeholder)</Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
             When you see a stop sign, what must you do?
           </Typography>
