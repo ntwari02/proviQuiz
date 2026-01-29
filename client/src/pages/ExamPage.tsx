@@ -15,10 +15,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { EXAM_DURATION_SECONDS } from "../data/mockQuestions";
-import { startExamFromApi } from "../api/examApi";
+import { startExamFromApi, type StartExamOptions } from "../api/examApi";
 import { useExamStore } from "../store/examStore";
 import type { ExamStatus } from "../types/exam";
 import toast from "react-hot-toast";
+
+const TOTAL_QUESTIONS = 433;
 
 function formatTime(seconds: number): string {
   const m = Math.max(0, Math.floor(seconds / 60));
@@ -44,7 +46,6 @@ export function ExamPage() {
   const [remaining, setRemaining] = useState(() => durationSeconds || EXAM_DURATION_SECONDS);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-
   useEffect(() => {
     if (status !== "in_progress" || !startedAt) return;
 
@@ -76,7 +77,12 @@ export function ExamPage() {
     try {
       setStarting(true);
       setStartError(null);
-      const loaded = await startExamFromApi();
+      const options: StartExamOptions = {
+        rangeStart: 1,
+        rangeEnd: TOTAL_QUESTIONS,
+        imageFilter: "all",
+      };
+      const loaded = await startExamFromApi(options);
       if (!loaded.length) {
         setStartError("No questions available. Please try again later.");
         toast.error("No questions available.");
@@ -111,7 +117,7 @@ export function ExamPage() {
           <Typography color="text.secondary">20 questions • 20 minutes • Single attempt</Typography>
         </Box>
 
-        <Card variant="outlined" sx={{ borderRadius: 3 }}>
+        <Card variant="outlined" sx={{ borderRadius: 0 }}>
           <CardContent>
             <Stack
               direction={{ xs: "column", sm: "row" }}
@@ -119,7 +125,7 @@ export function ExamPage() {
               justifyContent="space-between"
               alignItems={{ sm: "center" }}
             >
-              <Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography fontWeight={800}>Ready to begin?</Typography>
                 <Typography variant="body2" color="text.secondary">
                   You will have 20 minutes to answer all questions. Your score will be shown at the end.
@@ -129,6 +135,14 @@ export function ExamPage() {
                     {startError}
                   </Typography>
                 )}
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Question range
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    You will practice from the full set of {TOTAL_QUESTIONS} questions.
+                  </Typography>
+                </Box>
               </Box>
               <Stack direction="row" gap={1}>
                 <Button onClick={() => navigate("/")} variant="text" sx={{ textTransform: "none", borderRadius: 999 }}>
@@ -256,8 +270,12 @@ export function ExamPage() {
               src={currentQuestion.imageUrl}
               alt="Question image"
               sx={{
+                width: "100%",
                 maxWidth: "100%",
-                maxHeight: 400,
+                height: "auto",
+                maxHeight: 250,
+                display: "block",
+                objectFit: "contain",
                 borderRadius: 2,
                 border: "1px solid",
                 borderColor: "divider",

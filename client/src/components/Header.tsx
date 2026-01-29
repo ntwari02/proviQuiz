@@ -1,9 +1,10 @@
-import { AppBar, Box, Button, Container, IconButton, Tooltip, Toolbar, Typography, Drawer, List, ListItemButton, ListItemText, useMediaQuery } from "@mui/material";
+import { AppBar, Box, Button, Container, IconButton, Tooltip, Toolbar, Typography, Drawer, List, ListItemButton, ListItemText, useMediaQuery, Menu, MenuItem, Divider, Grow, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { NavLink } from "react-router-dom";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useUiStore } from "../store/uiStore";
 import { useTheme } from "@mui/material/styles";
 import { useState } from "react";
@@ -20,9 +21,17 @@ export function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [open, setOpen] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+
+  const handleLogoutConfirm = () => {
+    setLogoutDialogOpen(false);
+    setUserMenuAnchor(null);
+    logout();
+  };
 
   const navItems = [
     { label: "Home", to: "/" },
@@ -65,27 +74,11 @@ export function Header() {
                     {item.label}
                   </Button>
                 ))}
-                {isAdmin && (
-                  <Button
-                    component={NavLink}
-                    to="/admin"
-                    variant="outlined"
-                    sx={{ ...linkSx, borderColor: "success.main", color: "success.main" }}
-                  >
-                    Admin
-                  </Button>
-                )}
               </Box>
             )}
 
             {/* Right: user, auth actions, theme, mobile menu */}
             <Box display="flex" alignItems="center" gap={1}>
-              {!isMobile && token && (
-                <Typography variant="body2" sx={{ px: 1.5, fontWeight: 800 }} noWrap>
-                  {user?.name || user?.email || "Account"}
-                </Typography>
-              )}
-
               {!isMobile &&
                 (!token ? (
                   <>
@@ -97,15 +90,94 @@ export function Header() {
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    variant="outlined"
-                    sx={linkSx}
-                    onClick={() => {
-                      logout();
-                    }}
-                  >
-                    Logout
-                  </Button>
+                  <>
+                    <Tooltip title="User menu">
+                      <IconButton
+                        onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                        sx={{ border: "1px solid", borderColor: "divider" }}
+                      >
+                        <AccountCircleIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={userMenuAnchor}
+                      open={Boolean(userMenuAnchor)}
+                      onClose={() => setUserMenuAnchor(null)}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                      transformOrigin={{ vertical: "top", horizontal: "right" }}
+                      TransitionComponent={Grow}
+                      TransitionProps={{ timeout: 200 }}
+                      PaperProps={{
+                        sx: {
+                          minWidth: 280,
+                          maxWidth: 320,
+                          mt: 1,
+                          borderRadius: 0,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                          overflow: "hidden",
+                          "& .MuiMenuItem-root": {
+                            px: 2.5,
+                            py: 1.25,
+                            transition: "all 0.2s ease-in-out",
+                            "&:hover": {
+                              bgcolor: "action.hover",
+                              transform: "translateX(4px)",
+                            },
+                            "&:disabled": {
+                              opacity: 1,
+                              "&:hover": {
+                                transform: "none",
+                              },
+                            },
+                          },
+                          "& .MuiDivider-root": {
+                            my: 0.5,
+                          },
+                        },
+                      }}
+                    >
+                      <MenuItem component={NavLink} to="/" onClick={() => setUserMenuAnchor(null)}>
+                        Home
+                      </MenuItem>
+                      <MenuItem component={NavLink} to="/exam" onClick={() => setUserMenuAnchor(null)}>
+                        Start Exam
+                      </MenuItem>
+                      <MenuItem component={NavLink} to="/demo" onClick={() => setUserMenuAnchor(null)}>
+                        Demo
+                      </MenuItem>
+                      {isAdmin && (
+                        <MenuItem component={NavLink} to="/admin" onClick={() => setUserMenuAnchor(null)}>
+                          Admin
+                        </MenuItem>
+                      )}
+                      <Divider />
+                      <MenuItem disabled>
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          {user?.name || user?.email || "Account"}
+                        </Typography>
+                      </MenuItem>
+                      <MenuItem disabled>
+                        <Typography variant="caption" color="text.secondary">
+                          Role: {user?.role || "N/A"}
+                        </Typography>
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem
+                        onClick={() => {
+                          setUserMenuAnchor(null);
+                          setLogoutDialogOpen(true);
+                        }}
+                        sx={{
+                          "&:hover": {
+                            bgcolor: "error.light",
+                            color: "error.contrastText",
+                          },
+                        }}
+                      >
+                        Logout
+                      </MenuItem>
+                    </Menu>
+                  </>
                 ))}
 
               <Tooltip title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
@@ -151,16 +223,6 @@ export function Header() {
               <ListItemText primary={item.label} />
             </ListItemButton>
           ))}
-          {isAdmin && (
-            <ListItemButton
-              component={NavLink}
-              to="/admin"
-              onClick={() => setOpen(false)}
-              sx={{ color: "success.main" }}
-            >
-              <ListItemText primary="Admin Dashboard" />
-            </ListItemButton>
-          )}
 
           {token && (
             <Box px={2} pt={1} pb={0.5}>
@@ -180,7 +242,7 @@ export function Header() {
               to={item.to === "#logout" ? undefined : item.to}
               onClick={() => {
                 setOpen(false);
-                if (item.to === "#logout") logout();
+                if (item.to === "#logout") setLogoutDialogOpen(true);
               }}
             >
               <ListItemText primary={item.label} />
@@ -188,6 +250,31 @@ export function Header() {
           ))}
         </List>
       </Drawer>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+      >
+        <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 700 }}>
+          Confirm Logout
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="logout-dialog-description">
+            Are you sure you want to logout? You will need to sign in again to access your account.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setLogoutDialogOpen(false)} variant="outlined" sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleLogoutConfirm} variant="contained" color="error" sx={{ textTransform: "none" }} autoFocus>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 }

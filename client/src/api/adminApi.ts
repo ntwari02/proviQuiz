@@ -300,7 +300,7 @@ export type SystemSettings = {
   systemName: string;
   logoUrl?: string;
   examRules?: string;
-  passingCriteria: number;
+  passingCriteria?: number;
   questionRandomization: boolean;
   maintenanceMode: boolean;
   maintenanceMessage?: string;

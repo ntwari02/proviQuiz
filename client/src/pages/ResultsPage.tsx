@@ -196,7 +196,7 @@ export function ResultsPage() {
                       alt="Question image"
                       sx={{
                         maxWidth: "100%",
-                        maxHeight: 400,
+                        maxHeight: 250,
                         borderRadius: 2,
                         border: "1px solid",
                         borderColor: "divider",

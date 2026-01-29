@@ -18,6 +18,14 @@ type ServerQuestion = {
 type StartExamResponse = {
   questions: ServerQuestion[];
   limit: number;
+  // Helpful for debugging: how many questions satisfied the filter on the server
+  totalAvailable?: number;
+};
+
+export type StartExamOptions = {
+  rangeStart?: number;
+  rangeEnd?: number;
+  imageFilter?: "all" | "images" | "text";
 };
 
 function stripLeadingNumbering(text: string): string {
@@ -25,8 +33,19 @@ function stripLeadingNumbering(text: string): string {
   return text.replace(/^\s*\d+\s*([.)\-:])\s*/u, "").trim();
 }
 
-export async function startExamFromApi(): Promise<Question[]> {
-  const res = await api.get<StartExamResponse>("/exams/start");
+export async function startExamFromApi(options?: StartExamOptions): Promise<Question[]> {
+  const res = await api.get<StartExamResponse>("/exams/start", {
+    params: options ?? {},
+  });
+
+  // In dev, log how many questions the server says are available
+  if (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production") {
+    console.log("[startExamFromApi]", {
+      options,
+      limit: res.data.limit,
+      totalAvailable: res.data.totalAvailable,
+    });
+  }
 
   // Ensure no duplicates (defensive: backend $sample should already be unique)
   const uniqueById = new Map<number, ServerQuestion>();
