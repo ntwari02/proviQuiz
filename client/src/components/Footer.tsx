@@ -18,6 +18,21 @@ export function Footer() {
             <Link component={NavLink} to="/" underline="hover" color="inherit">
               Home
             </Link>
+            <a
+  href="https://t.me/ProviQuiz_bot"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="fixed bottom-5 right-5 z-50
+             flex items-center gap-2
+             px-4 py-3 rounded-full
+             bg-[#229ED9] hover:bg-[#1b8fc6]
+             text-white font-semibold
+             shadow-2xl
+             transition-all duration-200
+             hover:scale-110"
+>
+  💬 Telegram
+</a>
             <Link component={NavLink} to="/exam" underline="hover" color="inherit">
               Exam
             </Link>
