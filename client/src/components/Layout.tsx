@@ -13,7 +13,6 @@ import { useBattleUiStore } from "../store/battleUiStore";
 
 export function Layout() {
   const location = useLocation();
-  const isHome = location.pathname === "/";
   const { useBottomNav, immersiveExam, isCompactPhone } = useDeviceAdapter();
   const examStatus = useExamStore((s) => s.status);
   const battleImmersive = useBattleUiStore((s) => s.immersive);
@@ -89,7 +88,7 @@ export function Layout() {
           maxWidth={playActive ? false : "lg"}
           sx={{
             px: playActive ? { xs: 1.25, sm: 2 } : { xs: 1.5, sm: 3 },
-            py: playActive ? { xs: 1, sm: 2 } : isHome ? 0 : { xs: 2.5, sm: 5, md: 6 },
+            py: playActive ? { xs: 1, sm: 2 } : { xs: 2.5, sm: 4, md: 5 },
             pb: showBottom ? "calc(72px + env(safe-area-inset-bottom))" : undefined,
             pt: playActive ? "max(8px, env(safe-area-inset-top))" : undefined,
           }}

@@ -33,13 +33,14 @@ export function Header() {
     const base = [
       { label: "Home", to: "/" },
       { label: "Start Exam", to: "/exam" },
+      { label: "Daily 5", to: "/daily" },
       { label: "Demo", to: "/demo" },
     ];
     if (isPremium) {
       return [
         { label: "Home", to: "/" },
         { label: "Exam", to: "/exam" },
-        { label: "Analyse", to: "/premium/analyse" },
+        { label: "Daily", to: "/daily" },
         { label: "Battle", to: "/premium/battle" },
         { label: "Premium", to: "/premium" },
       ];
@@ -166,8 +167,8 @@ export function Header() {
                       <MenuItem component={NavLink} to="/exam" onClick={() => setUserMenuAnchor(null)}>
                         Start Exam
                       </MenuItem>
-                      <MenuItem component={NavLink} to="/demo" onClick={() => setUserMenuAnchor(null)}>
-                        Demo
+                      <MenuItem component={NavLink} to="/daily" onClick={() => setUserMenuAnchor(null)}>
+                        Daily challenge
                       </MenuItem>
                       {isPremium && (
                         <MenuItem component={NavLink} to="/premium/analyse" onClick={() => setUserMenuAnchor(null)}>

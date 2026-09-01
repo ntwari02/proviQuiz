@@ -1,7 +1,7 @@
 import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
-import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
+import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,13 +18,14 @@ export function BottomNav() {
     ? [
         { label: "Home", to: "/", icon: <HomeOutlinedIcon /> },
         { label: "Exam", to: "/exam", icon: <QuizOutlinedIcon /> },
-        { label: "Analyse", to: "/premium/analyse", icon: <InsightsOutlinedIcon /> },
+        { label: "Daily", to: "/daily", icon: <WhatshotOutlinedIcon /> },
         { label: "Battle", to: "/premium/battle", icon: <EmojiEventsOutlinedIcon /> },
         { label: "You", to: "/premium", icon: <WorkspacePremiumOutlinedIcon /> },
       ]
     : [
         { label: "Home", to: "/", icon: <HomeOutlinedIcon /> },
         { label: "Exam", to: "/exam", icon: <QuizOutlinedIcon /> },
+        { label: "Daily", to: "/daily", icon: <WhatshotOutlinedIcon /> },
         { label: token ? "Upgrade" : "Demo", to: token ? "/premium/upgrade" : "/demo", icon: <WorkspacePremiumOutlinedIcon /> },
       ];
 

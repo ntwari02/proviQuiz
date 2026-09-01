@@ -225,6 +225,17 @@ export function PlatformSettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Daily challenge */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" fontWeight={900} mb={2}>National daily challenge</Typography>
+              <FormControlLabel control={<Switch checked={Boolean(form.watch("dailyChallenge.enabled"))} onChange={(e) => form.setValue("dailyChallenge.enabled", e.target.checked)} />} label="Enabled" />
+              <FormControlLabel control={<Switch checked={Boolean(form.watch("dailyChallenge.explanationsPremiumOnly"))} onChange={(e) => form.setValue("dailyChallenge.explanationsPremiumOnly", e.target.checked)} />} label="Explanations Premium-only" />
+              <FormControlLabel control={<Switch checked={Boolean(form.watch("dailyChallenge.boardEnabled"))} onChange={(e) => form.setValue("dailyChallenge.boardEnabled", e.target.checked)} />} label="National board" />
+              <TextField sx={{ mt: 2 }} label="Questions per day" type="number" {...form.register("dailyChallenge.questionCount", { valueAsNumber: true })} />
+            </CardContent>
+          </Card>
+
           {/* Gamification */}
           <Card>
             <CardContent>

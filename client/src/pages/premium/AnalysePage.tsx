@@ -170,7 +170,7 @@ export function AnalysePage() {
             ))}
           </CardContent>
         </Card>
-      </Card>
+      </Stack>
 
       <Stack direction={isPhone ? "column" : "row"} gap={1} flexWrap="wrap">
         <Button component={RouterLink} to="/premium/mistakes" variant="outlined" fullWidth={isPhone} sx={{ borderRadius: 999, minHeight: 44 }}>My mistakes</Button>

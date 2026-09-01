@@ -12,6 +12,7 @@ import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined";
+import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
 import { useQuery } from "@tanstack/react-query";
 import { Link as RouterLink } from "react-router-dom";
 import { premiumPaywallApi, premiumPlansPublicApi } from "../../api/premiumApi";
@@ -20,6 +21,11 @@ import { useDeviceAdapter } from "../../hooks/useDeviceAdapter";
 import { usePremiumAccess } from "../../hooks/usePremiumAccess";
 
 const SHOWCASE = [
+  {
+    icon: <WhatshotOutlinedIcon />,
+    title: "National daily 5",
+    body: "The same five questions for every learner in Rwanda today. Streaks and a live board — free once you sign in.",
+  },
   {
     icon: <GroupsOutlinedIcon />,
     title: "Live battles",

@@ -1,0 +1,16 @@
+{
+  "name": "proviquiz",
+  "private": true,
+  "description": "Monorepo: client/ (Vercel) and server/ (Render). Root scripts target the API so Render can run from the repo root.",
+  "scripts": {
+    "postinstall": "npm install --prefix server --include=dev && npm run build --prefix server",
+    "start": "npm start --prefix server",
+    "build": "npm run build --prefix server",
+    "dev": "npm run dev --prefix server",
+    "build:client": "npm install --prefix client --include=dev && npm run build --prefix client",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

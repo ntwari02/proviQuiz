@@ -4,6 +4,7 @@ import { DemoPage } from "./pages/DemoPage";
 import { ExamPage } from "./pages/ExamPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { HomePage } from "./pages/HomePage";
+import { DailyChallengePage } from "./pages/DailyChallengePage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -39,6 +40,7 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="/daily" element={<DailyChallengePage />} />
         <Route path="/exam" element={<ExamPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/demo" element={<DemoPage />} />

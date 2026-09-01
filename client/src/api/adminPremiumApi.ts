@@ -66,6 +66,12 @@ export type PlatformSettings = {
     streakEnabled: boolean;
     achievementsEnabled: boolean;
   };
+  dailyChallenge: {
+    enabled: boolean;
+    questionCount: number;
+    explanationsPremiumOnly: boolean;
+    boardEnabled: boolean;
+  };
   premiumFeatures: Record<string, boolean>;
   paywall: {
     headline: string;

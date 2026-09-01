@@ -27,8 +27,8 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
     return createTheme({
       palette: {
         mode: colorMode,
-        primary: { main: isDark ? "#E5E7EB" : "#111827" }, // light text on dark, dark text on light
-        secondary: { main: isDark ? "#9CA3AF" : "#6B7280" },
+        primary: { main: isDark ? "#5eead4" : "#0f766e" },
+        secondary: { main: isDark ? "#f8fafc" : "#134e4a" },
         background: isDark
           ? { default: "#020617", paper: "#020617" }
           : { default: "#F6F6F2", paper: "#FFFFFF" },
@@ -93,15 +93,15 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
               minHeight: 44,
             },
             containedPrimary: {
-              backgroundColor: isDark ? "#E5E7EB" : "#111827",
-              color: isDark ? "#020617" : "#F9FAFB",
+              backgroundColor: isDark ? "#5eead4" : "#0f766e",
+              color: isDark ? "#042f2e" : "#F9FAFB",
               "&:hover": {
-                backgroundColor: isDark ? "#F9FAFB" : "#020617",
+                backgroundColor: isDark ? "#99f6e4" : "#0d9488",
               },
             },
             outlinedPrimary: {
-              borderColor: isDark ? "#E5E7EB" : "#111827",
-              color: isDark ? "#E5E7EB" : "#111827",
+              borderColor: isDark ? "#5eead4" : "#0f766e",
+              color: isDark ? "#5eead4" : "#0f766e",
             },
           },
         },
