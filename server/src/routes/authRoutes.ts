@@ -190,7 +190,9 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) return res.status(401).json({ message: "Not authenticated" });
-  const user = await User.findById(req.userId).select("email name role createdAt");
+  const user = await User.findById(req.userId).select(
+    "email name role createdAt examDate challengeStreak longestChallengeStreak"
+  );
   if (!user) return res.status(404).json({ message: "User not found" });
 
   const access = await getPremiumAccess(req.userId);
@@ -205,6 +207,9 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
     name: user.name,
     role: user.role,
     createdAt: user.createdAt,
+    examDate: (user as any).examDate ?? null,
+    challengeStreak: (user as any).challengeStreak ?? 0,
+    longestChallengeStreak: (user as any).longestChallengeStreak ?? 0,
     premium: access,
     examQuota: quota,
   });

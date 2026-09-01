@@ -54,6 +54,13 @@ export interface GamificationConfig {
   achievementsEnabled: boolean;
 }
 
+export interface DailyChallengeConfig {
+  enabled: boolean;
+  questionCount: number;
+  explanationsPremiumOnly: boolean;
+  boardEnabled: boolean;
+}
+
 export interface PremiumFeaturesConfig {
   analyse: boolean;
   learn: boolean;
@@ -86,6 +93,7 @@ export interface PlatformSettingsDocument extends Document {
   battle: BattleConfig;
   leaderboard: LeaderboardConfig;
   gamification: GamificationConfig;
+  dailyChallenge: DailyChallengeConfig;
   premiumFeatures: PremiumFeaturesConfig;
   paywall: PaywallConfig;
   masteryBandBeginnerMax: number;
@@ -160,6 +168,16 @@ const gamificationSchema = new Schema<GamificationConfig>(
     enabled: { type: Boolean, default: true },
     streakEnabled: { type: Boolean, default: true },
     achievementsEnabled: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+const dailyChallengeSchema = new Schema<DailyChallengeConfig>(
+  {
+    enabled: { type: Boolean, default: true },
+    questionCount: { type: Number, default: 5, min: 3, max: 15 },
+    explanationsPremiumOnly: { type: Boolean, default: true },
+    boardEnabled: { type: Boolean, default: true },
   },
   { _id: false }
 );
@@ -242,6 +260,7 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>(
     battle: { type: battleSchema, default: () => ({}) },
     leaderboard: { type: leaderboardSchema, default: () => ({}) },
     gamification: { type: gamificationSchema, default: () => ({}) },
+    dailyChallenge: { type: dailyChallengeSchema, default: () => ({}) },
     premiumFeatures: { type: premiumFeaturesSchema, default: () => ({}) },
     paywall: { type: paywallSchema, default: () => ({}) },
     masteryBandBeginnerMax: { type: Number, default: 39 },

@@ -25,7 +25,7 @@ router.get("/plans", async (_req, res) => {
     const plans = await listActivePlans();
     res.json(
       plans.map((p) => ({
-        id: p.id,
+        id: String(p._id),
         name: p.name,
         slug: p.slug,
         description: p.description,

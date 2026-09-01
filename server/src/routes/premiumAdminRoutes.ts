@@ -226,7 +226,7 @@ router.get("/premium/quota-analytics", async (_req: AuthRequest, res) => {
 
       results.push({
         plan: {
-          id: plan.id,
+          id: String(plan._id),
           name: plan.name,
           examQuota: plan.examQuota,
           examQuotaPeriod: plan.examQuotaPeriod,

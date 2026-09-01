@@ -69,9 +69,9 @@ export async function getPremiumAccess(userId?: string | null): Promise<PremiumA
   return {
     tier,
     isPremium: tier === "premium" || tier === "trial",
-    subscriptionId: sub.id,
+    subscriptionId: String(sub._id),
     plan: {
-      id: plan.id,
+      id: String(plan._id),
       name: plan.name,
       slug: plan.slug,
       examQuota: plan.examQuota,
@@ -105,7 +105,7 @@ export async function grantSubscription(input: {
 
   return UserSubscription.create({
     user: input.userId,
-    plan: plan.id,
+    plan: plan._id,
     status: input.status ?? "active",
     startedAt,
     expiresAt,

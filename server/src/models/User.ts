@@ -12,6 +12,10 @@ export interface UserDocument extends Document {
   banned?: boolean; // Ban user (prevent login)
   bannedReason?: string; // Reason for ban
   bannedAt?: Date;
+  examDate?: Date | null;
+  challengeStreak: number;
+  longestChallengeStreak: number;
+  lastChallengeDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +37,10 @@ const UserSchema = new Schema<UserDocument>(
     banned: { type: Boolean, default: false },
     bannedReason: { type: String },
     bannedAt: { type: Date },
+    examDate: { type: Date, default: null },
+    challengeStreak: { type: Number, default: 0 },
+    longestChallengeStreak: { type: Number, default: 0 },
+    lastChallengeDate: { type: String, default: null },
   },
   { timestamps: true }
 );

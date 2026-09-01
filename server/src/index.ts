@@ -16,6 +16,7 @@ import analyticsAdminRoutes from "./routes/analyticsAdminRoutes";
 import systemSettingsRoutes from "./routes/systemSettingsRoutes";
 import premiumAdminRoutes from "./routes/premiumAdminRoutes";
 import premiumRoutes from "./routes/premiumRoutes";
+import challengeRoutes from "./routes/challengeRoutes";
 import { ensureDefaultPremiumPlans } from "./scripts/seedPremiumPlans";
 import { getPlatformSettings } from "./services/platformSettingsService";
 
@@ -51,6 +52,7 @@ app.use("/api/admin", analyticsAdminRoutes);
 app.use("/api/admin", systemSettingsRoutes);
 app.use("/api/admin", premiumAdminRoutes);
 app.use("/api/premium", premiumRoutes);
+app.use("/api/challenges", challengeRoutes);
 
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI;

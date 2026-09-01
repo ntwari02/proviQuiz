@@ -34,6 +34,7 @@ export async function updatePlatformSettings(
       "battle",
       "leaderboard",
       "gamification",
+      "dailyChallenge",
       "premiumFeatures",
       "paywall",
       "masteryBandBeginnerMax",
