@@ -11,14 +11,21 @@ import {
   Radio,
   RadioGroup,
   LinearProgress,
+  Paper,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { EXAM_DURATION_SECONDS } from "../data/mockQuestions";
-import { startExamFromApi, type StartExamOptions } from "../api/examApi";
-import { useExamStore } from "../store/examStore";
-import type { ExamStatus } from "../types/exam";
 import toast from "react-hot-toast";
+import { EXAM_DURATION_SECONDS } from "../data/mockQuestions";
+import { startExamFromApi, ExamQuotaExceededError, type StartExamOptions } from "../api/examApi";
+import { persistExamResult } from "../api/examSubmit";
+import { saveExamPack, takeOldestExamPack, peekExamPackCount } from "../offline/examOfflineStore";
+import { syncOfflineExamSessions } from "../offline/syncExamSessions";
+import type { Question } from "../types/exam";
+import { useExamStore } from "../store/examStore";
+import { usePremiumAccess } from "../hooks/usePremiumAccess";
+import type { ExamStatus } from "../types/exam";
+import { useDeviceAdapter } from "../hooks/useDeviceAdapter";
 
 const TOTAL_QUESTIONS = 433;
 
@@ -30,6 +37,8 @@ function formatTime(seconds: number): string {
 
 export function ExamPage() {
   const navigate = useNavigate();
+  const { isPremium, quota, refetch: refetchPremium } = usePremiumAccess();
+  const { isPhone, isTablet, isCompactPhone, immersiveExam } = useDeviceAdapter();
 
   const status = useExamStore((s) => s.status);
   const questions = useExamStore((s) => s.questions);
@@ -44,27 +53,60 @@ export function ExamPage() {
   const submitExam = useExamStore((s) => s.submitExam);
 
   const [remaining, setRemaining] = useState(() => durationSeconds || EXAM_DURATION_SECONDS);
+  const [offlinePacks, setOfflinePacks] = useState(0);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void peekExamPackCount().then(setOfflinePacks).catch(() => setOfflinePacks(0));
+    void syncOfflineExamSessions();
+  }, []);
+  const finishingRef = useRef(false);
+
+  const finishAndGoToResults = async () => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    submitExam();
+    const state = useExamStore.getState();
+    if (state.result && state.questions.length > 0 && state.startedAt) {
+      await persistExamResult({
+        questions: state.questions,
+        selectedAnswers: state.selectedAnswers,
+        startedAt: state.startedAt,
+        finishedAt: state.result.finishedAt,
+      }).then((outcome) => {
+        if (outcome?.status === "queued") {
+          toast(
+            outcome.droppedOldest
+              ? `Saved offline (max 5). Oldest queued exam was replaced.`
+              : "No connection — exam saved on this device (up to 5). It will sync when you are back online.",
+            { duration: 5000 }
+          );
+        }
+      });
+      void refetchPremium();
+    }
+    navigate("/results");
+  };
+
   useEffect(() => {
     if (status !== "in_progress" || !startedAt) return;
 
     const tick = () => {
       const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
       const rem = Math.max(0, durationSeconds - elapsedSeconds);
-      
+
       setRemaining(rem);
-      
+
       if (rem <= 0 && status === "in_progress") {
-        submitExam();
-        navigate("/results");
+        void finishAndGoToResults();
       }
     };
 
     tick();
     const timerId = setInterval(tick, 1000);
     return () => clearInterval(timerId);
-  }, [status, startedAt, durationSeconds, submitExam, navigate]);
+  }, [status, startedAt, durationSeconds, navigate]);
 
   const currentQuestion = useMemo(
     () => (questions.length > 0 ? questions[currentIndex] : null),
@@ -82,16 +124,34 @@ export function ExamPage() {
         rangeEnd: TOTAL_QUESTIONS,
         imageFilter: "all",
       };
-      const loaded = await startExamFromApi(options);
+      const { questions: loaded } = await startExamFromApi(options);
       if (!loaded.length) {
         setStartError("No questions available. Please try again later.");
         toast.error("No questions available.");
         return;
       }
+      await saveExamPack(loaded).catch(() => {});
+      void peekExamPackCount().then(setOfflinePacks).catch(() => {});
       startExam(loaded, EXAM_DURATION_SECONDS);
+      finishingRef.current = false;
+      void refetchPremium();
       toast.success("Exam started");
     } catch (err) {
       console.error(err);
+      if (err instanceof ExamQuotaExceededError) {
+        setStartError(err.message);
+        toast.error(err.message);
+        void refetchPremium();
+        return;
+      }
+      const pack = await takeOldestExamPack().catch(() => null);
+      if (pack?.questions && Array.isArray(pack.questions) && pack.questions.length) {
+        startExam(pack.questions as Question[], EXAM_DURATION_SECONDS);
+        finishingRef.current = false;
+        toast.success("Offline exam started from a saved session pack");
+        void peekExamPackCount().then(setOfflinePacks).catch(() => {});
+        return;
+      }
       setStartError("Failed to start exam. Check your connection and try again.");
       toast.error("Failed to start exam.");
     } finally {
@@ -100,9 +160,8 @@ export function ExamPage() {
   };
 
   const handleSubmit = () => {
-    submitExam();
     toast.success("Exam submitted");
-    navigate("/results");
+    void finishAndGoToResults();
   };
 
   const computedStatus: ExamStatus = status;
@@ -115,6 +174,18 @@ export function ExamPage() {
             Mock Exam
           </Typography>
           <Typography color="text.secondary">20 questions • 20 minutes • Single attempt</Typography>
+          {offlinePacks > 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Offline packs saved: {offlinePacks}/5 — you can start an exam without internet.
+            </Typography>
+          )}
+          {isPremium && quota?.applies && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {quota.unlimited
+                ? "Premium: Unlimited exams"
+                : `Premium exam quota: ${quota.remaining} of ${quota.limit} remaining ${quota.periodLabel}`}
+            </Typography>
+          )}
         </Box>
 
         <Card variant="outlined" sx={{ borderRadius: 0 }}>
@@ -176,41 +247,51 @@ export function ExamPage() {
   const timerPulse = remaining <= 30;
 
   return (
-    <Stack spacing={3}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: isTablet ? "row" : "column",
+        gap: isTablet ? 2 : 1.5,
+        pb: immersiveExam ? "calc(72px + env(safe-area-inset-bottom))" : 0,
+      }}
+    >
+      <Stack spacing={isCompactPhone ? 1.5 : 3} sx={{ flex: 1, minWidth: 0 }}>
       <Card
         variant="outlined"
         sx={{
-          borderRadius: 0,
+          borderRadius: immersiveExam ? 2 : 0,
           position: "sticky",
-          top: { xs: 8, sm: 12 },
+          top: immersiveExam ? 0 : { xs: 8, sm: 12 },
           zIndex: 5,
           backdropFilter: "blur(10px)",
           bgcolor: "background.paper",
         }}
       >
-        <CardContent sx={{ py: 0.75, px: { xs: 1.5, sm: 2 } }}>
-          <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5} alignItems={{ md: "center" }}>
-            <Box>
-              <Typography variant="h6" fontWeight={900}>
-                Question {currentIndex + 1} / {totalQuestions}
+        <CardContent sx={{ py: isCompactPhone ? 0.5 : 0.75, px: { xs: 1.25, sm: 2 } }}>
+          <Stack direction="row" justifyContent="space-between" gap={1.5} alignItems="center">
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant={isCompactPhone ? "subtitle1" : "h6"} fontWeight={900} noWrap>
+                {currentIndex + 1} / {totalQuestions}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {answeredCount} answered • {Math.round(completionPct)}% complete
-              </Typography>
+              {!isCompactPhone && (
+                <Typography variant="body2" color="text.secondary">
+                  {answeredCount} answered • {Math.round(completionPct)}% complete
+                </Typography>
+              )}
               <LinearProgress
                 aria-label="Exam progress"
                 variant="determinate"
                 value={Math.min(100, Math.max(0, completionPct))}
-                sx={{ mt: 0.75, height: 6, borderRadius: 999 }}
+                sx={{ mt: 0.75, height: isCompactPhone ? 4 : 6, borderRadius: 999 }}
               />
             </Box>
 
-            <Stack direction="row" gap={2} alignItems="center" justifyContent="flex-end">
+            <Stack direction="row" gap={1} alignItems="center">
               <Box
                 sx={{
                   position: "relative",
-                  width: 44,
-                  height: 44,
+                  width: isCompactPhone ? 40 : 44,
+                  height: isCompactPhone ? 40 : 44,
                   ...(timerPulse
                     ? {
                         "@keyframes pulse": {
@@ -227,7 +308,7 @@ export function ExamPage() {
                   variant="determinate"
                   value={Math.min(100, Math.max(0, timePct))}
                   color={timerColor}
-                    size={44}
+                    size={isCompactPhone ? 40 : 44}
                     thickness={4.2}
                 />
                 <Box
@@ -238,29 +319,31 @@ export function ExamPage() {
                     placeItems: "center",
                   }}
                 >
-                  <Typography variant="caption" fontWeight={900} sx={{ fontVariantNumeric: "tabular-nums" }}>
+                  <Typography variant="caption" fontWeight={900} sx={{ fontVariantNumeric: "tabular-nums", fontSize: isCompactPhone ? 10 : 12 }}>
                     {formatTime(remaining)}
                   </Typography>
                 </Box>
               </Box>
 
-              <Button
-                variant="contained"
-                color="secondary"
-                sx={{ px: 2.5, py: 1.1 }}
-                onClick={handleSubmit}
-                aria-label="Submit exam"
-              >
-                Submit
-              </Button>
+              {!immersiveExam && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{ px: 2.5, py: 1.1 }}
+                  onClick={handleSubmit}
+                  aria-label="Submit exam"
+                >
+                  Submit
+                </Button>
+              )}
             </Stack>
           </Stack>
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 0 }}>
-        <CardContent>
-          <Typography component="h2" variant="h6" fontWeight={900} sx={{ mb: 1, letterSpacing: 0.2, lineHeight: 1.35 }}>
+      <Card variant="outlined" sx={{ borderRadius: immersiveExam ? 2 : 0 }}>
+        <CardContent sx={{ px: { xs: 1.5, sm: 2 } }}>
+          <Typography component="h2" variant={isCompactPhone ? "subtitle1" : "h6"} fontWeight={900} sx={{ mb: 1, letterSpacing: 0.2, lineHeight: 1.35 }}>
             {currentQuestion.text}
           </Typography>
 
@@ -273,7 +356,7 @@ export function ExamPage() {
                 width: "100%",
                 maxWidth: "100%",
                 height: "auto",
-                maxHeight: 250,
+                maxHeight: isCompactPhone ? 160 : isPhone ? 200 : 250,
                 display: "block",
                 objectFit: "contain",
                 borderRadius: 2,
@@ -293,24 +376,22 @@ export function ExamPage() {
             <Stack spacing={1.25}>
               {currentQuestion.options.map((option) => {
                 const isSelected = selectedAnswers[currentQuestion.id] === option.id;
-                const letter = option.id.toUpperCase(); // a-d -> A-D
+                const letter = option.id.toUpperCase();
 
                 return (
                   <Box
                     key={option.id}
                     sx={{
-                      borderRadius: 999,
+                      borderRadius: isPhone ? 2 : 999,
                       border: "1px solid",
                       borderColor: isSelected ? "primary.main" : "divider",
                       bgcolor: isSelected ? "primary.main" : "transparent",
                       color: isSelected ? "primary.contrastText" : "text.primary",
                       px: 1.5,
-                      py: 0.75,
-                      transition: "transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease",
-                      "&:hover": {
-                        transform: "translateY(-1px)",
-                        boxShadow: isSelected ? "none" : "0 10px 24px rgba(17,24,39,0.08)",
-                      },
+                      py: 0.5,
+                      minHeight: 48,
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
                     <FormControlLabel
@@ -331,6 +412,7 @@ export function ExamPage() {
                         width: "100%",
                         ".MuiFormControlLabel-label": {
                           width: "100%",
+                          fontSize: isCompactPhone ? "0.9rem" : undefined,
                         },
                       }}
                     />
@@ -342,8 +424,10 @@ export function ExamPage() {
         </CardContent>
       </Card>
 
+      {!isTablet && !immersiveExam && (
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2} alignItems="center">
-        <Stack direction="row" flexWrap="wrap" gap={0.75}>
+        <Box sx={{ width: "100%", overflowX: "auto", py: 0.5 }}>
+        <Stack direction="row" flexWrap={isPhone ? "nowrap" : "wrap"} gap={0.75}>
           {questions.map((q, index) => {
             const isCurrent = index === currentIndex;
             const isAnswered = Boolean(selectedAnswers[q.id]);
@@ -359,11 +443,12 @@ export function ExamPage() {
             );
           })}
         </Stack>
+        </Box>
 
         <Stack direction="row" gap={1} sx={{ width: { xs: "100%", sm: "auto" }, justifyContent: { xs: "space-between", sm: "flex-end" } }}>
           <Button
             variant="outlined"
-            sx={{ borderRadius: 999, textTransform: "none" }}
+            sx={{ borderRadius: 999, textTransform: "none", minHeight: 44 }}
             disabled={currentIndex === 0}
             onClick={() => goToQuestion(currentIndex - 1)}
           >
@@ -371,18 +456,76 @@ export function ExamPage() {
           </Button>
           <Button
             variant="outlined"
-            sx={{ borderRadius: 999, textTransform: "none" }}
+            sx={{ borderRadius: 999, textTransform: "none", minHeight: 44 }}
             disabled={currentIndex === Math.max(totalQuestions - 1, 0)}
             onClick={() => goToQuestion(currentIndex + 1)}
           >
             Next
           </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ alignSelf: "center", ml: 1, display: { xs: "none", sm: "block" } }}>
-            {answeredCount}/{totalQuestions} answered
-          </Typography>
         </Stack>
       </Stack>
-    </Stack>
+      )}
+      </Stack>
+
+      {isTablet && (
+        <Card variant="outlined" sx={{ width: 220, flexShrink: 0, alignSelf: "flex-start", position: "sticky", top: 12 }}>
+          <CardContent>
+            <Typography variant="caption" fontWeight={800}>Questions</Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0.5, mt: 1 }}>
+              {questions.map((q, index) => {
+                const isCurrent = index === currentIndex;
+                const isAnswered = Boolean(selectedAnswers[q.id]);
+                return (
+                  <Chip
+                    key={q.id}
+                    label={index + 1}
+                    color={isCurrent ? "primary" : isAnswered ? "success" : "default"}
+                    variant={isCurrent ? "filled" : "outlined"}
+                    size="small"
+                    onClick={() => goToQuestion(index)}
+                    sx={{ justifyContent: "center" }}
+                  />
+                );
+              })}
+            </Box>
+            <Stack gap={1} mt={2}>
+              <Button variant="outlined" disabled={currentIndex === 0} onClick={() => goToQuestion(currentIndex - 1)}>Previous</Button>
+              <Button variant="outlined" disabled={currentIndex === Math.max(totalQuestions - 1, 0)} onClick={() => goToQuestion(currentIndex + 1)}>Next</Button>
+              <Button variant="contained" color="secondary" onClick={handleSubmit}>Submit</Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
+
+      {immersiveExam && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 12,
+            px: 1.5,
+            pt: 1,
+            pb: "calc(10px + env(safe-area-inset-bottom))",
+            display: "flex",
+            gap: 1,
+            borderRadius: 0,
+          }}
+        >
+          <Button fullWidth variant="outlined" disabled={currentIndex === 0} onClick={() => goToQuestion(currentIndex - 1)} sx={{ minHeight: 44 }}>
+            Prev
+          </Button>
+          <Button fullWidth variant="outlined" disabled={currentIndex === Math.max(totalQuestions - 1, 0)} onClick={() => goToQuestion(currentIndex + 1)} sx={{ minHeight: 44 }}>
+            Next
+          </Button>
+          <Button fullWidth variant="contained" color="secondary" onClick={handleSubmit} sx={{ minHeight: 44 }}>
+            Submit
+          </Button>
+        </Paper>
+      )}
+    </Box>
   );
 }
 

@@ -4,6 +4,14 @@ import { Question } from "../models/Question";
 import { ExamSession } from "../models/ExamSession";
 import { authMiddleware } from "../middleware/auth";
 import type { AuthRequest } from "../middleware/auth";
+import { optionalAuthMiddleware } from "../middleware/optionalAuth";
+import { getPremiumAccess } from "../services/premiumAccessService";
+import {
+  assertCanStartExam,
+  consumeExamQuota,
+  ExamQuotaExceededError,
+  getExamQuotaStatus,
+} from "../services/examQuotaService";
 
 const router = Router();
 
@@ -28,11 +36,42 @@ function hasImageUrl(doc: any): boolean {
   return true;
 }
 
+async function assertPremiumExamQuota(userId?: string) {
+  if (!userId) return;
+  const access = await getPremiumAccess(userId);
+  if (!access.isPremium) return;
+  await assertCanStartExam(userId);
+}
+
+async function consumePremiumExamQuota(userId?: string) {
+  if (!userId) return null;
+  const access = await getPremiumAccess(userId);
+  if (!access.isPremium) return null;
+  return consumeExamQuota(userId);
+}
+
 // Start exam: get 20 random questions, optionally filtered by range and image/text
-router.get("/start", async (req, res) => {
+// Premium subscribers only: server-side exam quota check + consumption (free users unchanged)
+router.get("/start", optionalAuthMiddleware, async (req: AuthRequest, res) => {
   try {
     const limit = 20;
     const parsed = startQuerySchema.safeParse(req.query);
+
+    let quota = null;
+    if (req.userId) {
+      try {
+        await assertPremiumExamQuota(req.userId);
+      } catch (err) {
+        if (err instanceof ExamQuotaExceededError) {
+          return res.status(429).json({
+            message: "Exam quota exceeded for your Premium plan",
+            code: "EXAM_QUOTA_EXCEEDED",
+            quota: err.status,
+          });
+        }
+        throw err;
+      }
+    }
 
     // Base range + non-deleted filter
     let from = 1;
@@ -50,7 +89,6 @@ router.get("/start", async (req, res) => {
       id: { $gte: from, $lte: to },
     }).lean();
 
-    // Explicit in-memory filtering so we are 100% sure about image/text classification
     let pool = baseDocs;
     if (imageFilter === "images") {
       pool = baseDocs.filter((q) => hasImageUrl(q));
@@ -58,8 +96,6 @@ router.get("/start", async (req, res) => {
       pool = baseDocs.filter((q) => !hasImageUrl(q));
     }
 
-    // Log some debug information so we can clearly see how many
-    // image vs text questions exist in the selected range.
     const imageCount = baseDocs.filter((q) => hasImageUrl(q)).length;
     const textCount = baseDocs.length - imageCount;
     console.log("[GET /api/exams/start]", {
@@ -69,31 +105,67 @@ router.get("/start", async (req, res) => {
       imageCount,
       textCount,
       poolCount: pool.length,
+      premiumQuota: quota,
     });
 
-    // Shuffle then slice to limit
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
 
     const questions = pool.slice(0, limit);
-    res.json({ questions, limit, totalAvailable: pool.length });
+    if (req.userId && questions.length > 0) {
+      quota = await consumePremiumExamQuota(req.userId);
+    }
+    res.json({ questions, limit, totalAvailable: pool.length, quota });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// Also support POST /api/exams/start to match some client expectations
-router.post("/start", async (_req, res) => {
+router.post("/start", optionalAuthMiddleware, async (req: AuthRequest, res) => {
   try {
+    let quota = null;
+    if (req.userId) {
+      try {
+        await assertPremiumExamQuota(req.userId);
+      } catch (err) {
+        if (err instanceof ExamQuotaExceededError) {
+          return res.status(429).json({
+            message: "Exam quota exceeded for your Premium plan",
+            code: "EXAM_QUOTA_EXCEEDED",
+            quota: err.status,
+          });
+        }
+        throw err;
+      }
+    }
+
     const limit = 20;
     const questions = await Question.aggregate([
       { $match: { isDeleted: { $ne: true } } },
       { $sample: { size: limit } },
     ]);
-    res.json({ questions, limit });
+    if (req.userId && questions.length > 0) {
+      quota = await consumePremiumExamQuota(req.userId);
+    }
+    res.json({ questions, limit, quota });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/quota", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    if (!req.userId) return res.status(401).json({ message: "Not authenticated" });
+    const access = await getPremiumAccess(req.userId);
+    if (!access.isPremium) {
+      return res.json({ applies: false });
+    }
+    const quota = await getExamQuotaStatus(req.userId);
+    res.json(quota);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

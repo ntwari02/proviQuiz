@@ -1,5 +1,7 @@
 import type { Question } from "../types/exam";
-import { api } from "./http";
+import type { QuotaStatus } from "./premiumApi";
+import { api, getApiErrorMessage } from "./http";
+import axios from "axios";
 
 type ServerQuestion = {
   id: number;
@@ -18,9 +20,23 @@ type ServerQuestion = {
 type StartExamResponse = {
   questions: ServerQuestion[];
   limit: number;
-  // Helpful for debugging: how many questions satisfied the filter on the server
   totalAvailable?: number;
+  quota?: QuotaStatus | null;
 };
+
+export type StartExamResult = {
+  questions: Question[];
+  quota: QuotaStatus | null;
+};
+
+export class ExamQuotaExceededError extends Error {
+  quota?: QuotaStatus;
+  constructor(message: string, quota?: QuotaStatus) {
+    super(message);
+    this.name = "ExamQuotaExceededError";
+    this.quota = quota;
+  }
+}
 
 export type StartExamOptions = {
   rangeStart?: number;
@@ -33,43 +49,49 @@ function stripLeadingNumbering(text: string): string {
   return text.replace(/^\s*\d+\s*([.)\-:])\s*/u, "").trim();
 }
 
-export async function startExamFromApi(options?: StartExamOptions): Promise<Question[]> {
-  const res = await api.get<StartExamResponse>("/exams/start", {
-    params: options ?? {},
-  });
-
-  // In dev, log how many questions the server says are available
-  if (import.meta.env.DEV) {
-    console.log("[startExamFromApi]", {
-      options,
-      limit: res.data.limit,
-      totalAvailable: res.data.totalAvailable,
+export async function startExamFromApi(options?: StartExamOptions): Promise<StartExamResult> {
+  try {
+    const res = await api.get<StartExamResponse>("/exams/start", {
+      params: options ?? {},
     });
+
+    if (import.meta.env.DEV) {
+      console.log("[startExamFromApi]", {
+        options,
+        limit: res.data.limit,
+        totalAvailable: res.data.totalAvailable,
+        quota: res.data.quota,
+      });
+    }
+
+    const uniqueById = new Map<number, ServerQuestion>();
+    for (const q of res.data.questions) uniqueById.set(q.id, q);
+
+    const questions = Array.from(uniqueById.values()).map<Question>((q) => {
+      const correctKey = q.correct;
+      const optionsArray: Question["options"] = (["a", "b", "c", "d"] as const).map((key) => ({
+        id: key,
+        text: q.options[key],
+        isCorrect: key === correctKey,
+      }));
+
+      return {
+        id: `q-${q.id}`,
+        dbQuestionId: q.id,
+        text: stripLeadingNumbering(q.question),
+        options: optionsArray,
+        explanation: q.explanation,
+        imageUrl: q.imageUrl,
+      };
+    });
+
+    return { questions, quota: res.data.quota ?? null };
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 429) {
+      const data = err.response.data as { message?: string; quota?: QuotaStatus };
+      throw new ExamQuotaExceededError(data?.message ?? getApiErrorMessage(err), data?.quota);
+    }
+    throw err;
   }
-
-  // Ensure no duplicates (defensive: backend $sample should already be unique)
-  const uniqueById = new Map<number, ServerQuestion>();
-  for (const q of res.data.questions) uniqueById.set(q.id, q);
-
-  return Array.from(uniqueById.values()).map<Question>((q) => {
-    const correctKey = q.correct;
-
-    const optionsArray: Question["options"] = (["a", "b", "c", "d"] as const).map((key) => ({
-      // Keep ids as the option key so we can render A–D cleanly
-      id: key,
-      text: q.options[key],
-      isCorrect: key === correctKey,
-    }));
-
-    return {
-      // Do not expose DB numeric ids in UI; we keep it internal only.
-      // Also strip leading numbering that may be present in imported question text.
-      id: `q-${crypto.randomUUID()}`,
-      text: stripLeadingNumbering(q.question),
-      options: optionsArray,
-      explanation: q.explanation,
-      imageUrl: q.imageUrl,
-    };
-  });
 }
 

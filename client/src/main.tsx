@@ -8,6 +8,10 @@ import { BrowserRouter } from "react-router-dom"
 import { useUiStore } from "./store/uiStore"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useAuthStore } from "./store/authStore"
+import { registerPwa } from "./pwa/registerPwa"
+import { startOfflineExamSync } from "./offline/syncExamSessions"
+
+registerPwa();
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const colorMode = useUiStore((s) => s.colorMode);
@@ -123,6 +127,7 @@ const queryClient = new QueryClient({
 function AuthBootstrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void useAuthStore.getState().bootstrap();
+    startOfflineExamSync();
   }, []);
   return <>{children}</>;
 }

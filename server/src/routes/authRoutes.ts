@@ -6,6 +6,8 @@ import { User } from "../models/User";
 import { signToken, authMiddleware } from "../middleware/auth";
 import type { AuthRequest } from "../middleware/auth";
 import { OAuth2Client } from "google-auth-library";
+import { getPremiumAccess } from "../services/premiumAccessService";
+import { getExamQuotaStatus } from "../services/examQuotaService";
 
 const router = Router();
 
@@ -190,7 +192,22 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) return res.status(401).json({ message: "Not authenticated" });
   const user = await User.findById(req.userId).select("email name role createdAt");
   if (!user) return res.status(404).json({ message: "User not found" });
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt });
+
+  const access = await getPremiumAccess(req.userId);
+  let quota = null;
+  if (access.isPremium) {
+    quota = await getExamQuotaStatus(req.userId);
+  }
+
+  res.json({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt,
+    premium: access,
+    examQuota: quota,
+  });
 });
 
 const forgotSchema = z.object({

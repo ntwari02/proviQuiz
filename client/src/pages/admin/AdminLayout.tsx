@@ -9,6 +9,8 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import SettingsIcon from "@mui/icons-material/Settings";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import TuneIcon from "@mui/icons-material/Tune";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
@@ -40,6 +42,8 @@ export function AdminLayout() {
       { label: "Exam Config", to: "/admin/exam-config", icon: <AssignmentIcon /> },
       { label: "Analytics", to: "/admin/analytics", icon: <AnalyticsIcon /> },
       { label: "Bulk Import/Export", to: "/admin/bulk", icon: <FileUploadIcon /> },
+      { label: "Premium Plans", to: "/admin/premium-plans", icon: <WorkspacePremiumIcon /> },
+      { label: "Platform Settings", to: "/admin/platform-settings", icon: <TuneIcon /> },
       { label: "Settings", to: "/admin/settings", icon: <SettingsIcon /> },
     ],
     []

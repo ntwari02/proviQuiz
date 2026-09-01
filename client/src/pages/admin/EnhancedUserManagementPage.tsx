@@ -41,6 +41,11 @@ import {
 } from "../../api/adminApi";
 import { getApiErrorMessage } from "../../api/http";
 import dayjs from "dayjs";
+import {
+  adminGrantSubscriptionApi,
+  adminPremiumPlansApi,
+  adminUserQuotaApi,
+} from "../../api/adminPremiumApi";
 
 function toCsv(rows: Array<Record<string, any>>) {
   const headers = Object.keys(rows[0] ?? {});
@@ -52,6 +57,34 @@ function toCsv(rows: Array<Record<string, any>>) {
 function UserDetailsDialog({ user, open, onClose }: { user: AdminUserEnhanced | null; open: boolean; onClose: () => void }) {
   const [tab, setTab] = useState(0);
   const [newPassword, setNewPassword] = useState("");
+  const [grantPlanId, setGrantPlanId] = useState("");
+
+  const plansQuery = useQuery({
+    queryKey: ["admin", "premium-plans"],
+    queryFn: adminPremiumPlansApi,
+    enabled: open && tab === 3,
+  });
+
+  const quotaQuery = useQuery({
+    queryKey: ["admin", "user-quota", user?.id],
+    queryFn: () => adminUserQuotaApi(user!.id),
+    enabled: open && !!user && tab === 3,
+  });
+
+  const grantMutation = useMutation({
+    mutationFn: () =>
+      adminGrantSubscriptionApi({
+        userId: user!.id,
+        planId: grantPlanId,
+        status: "active",
+      }),
+    onSuccess: () => {
+      toast.success("Premium subscription granted");
+      setGrantPlanId("");
+      void quotaQuery.refetch();
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  });
 
   const progressQuery = useQuery({
     queryKey: ["admin", "users", user?.id, "progress"],
@@ -187,6 +220,49 @@ function UserDetailsDialog({ user, open, onClose }: { user: AdminUserEnhanced | 
 
         {tab === 3 && (
           <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} mb={1}>Grant Premium</Typography>
+              {quotaQuery.data && (
+                <Typography variant="body2" color="text.secondary" mb={1}>
+                  Status: {quotaQuery.data.access.tier}
+                  {quotaQuery.data.access.isPremium && quotaQuery.data.access.plan
+                    ? ` · ${quotaQuery.data.access.plan.name}`
+                    : ""}
+                  {quotaQuery.data.quota?.applies && !quotaQuery.data.quota.unlimited
+                    ? ` · ${quotaQuery.data.quota.remaining}/${quotaQuery.data.quota.limit} exams ${quotaQuery.data.quota.periodLabel}`
+                    : quotaQuery.data.quota?.unlimited
+                    ? " · Unlimited exams"
+                    : ""}
+                </Typography>
+              )}
+              <Stack direction={{ xs: "column", sm: "row" }} gap={1}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Premium plan</InputLabel>
+                  <Select
+                    label="Premium plan"
+                    value={grantPlanId}
+                    onChange={(e) => setGrantPlanId(e.target.value)}
+                  >
+                    {(plansQuery.data ?? [])
+                      .filter((p) => p.active)
+                      .map((p) => (
+                        <MenuItem key={p._id} value={p._id}>
+                          {p.name} — {p.price} {p.currency}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="contained"
+                  disabled={!grantPlanId || grantMutation.isPending}
+                  onClick={() => grantMutation.mutate()}
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  Grant Premium
+                </Button>
+              </Stack>
+            </Box>
+
             <Box>
               <Typography variant="subtitle2" fontWeight={700} mb={1}>Reset Password</Typography>
               <Stack direction="row" gap={1}>

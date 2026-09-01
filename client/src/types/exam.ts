@@ -6,6 +6,7 @@ export type AnswerOption = {
 
 export type Question = {
   id: string;
+  dbQuestionId: number;
   text: string;
   options: AnswerOption[];
   explanation?: string;

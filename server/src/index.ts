@@ -14,6 +14,10 @@ import examConfigRoutes from "./routes/examConfigRoutes";
 import incrementRoutes from "./routes/incrementRoutes";
 import analyticsAdminRoutes from "./routes/analyticsAdminRoutes";
 import systemSettingsRoutes from "./routes/systemSettingsRoutes";
+import premiumAdminRoutes from "./routes/premiumAdminRoutes";
+import premiumRoutes from "./routes/premiumRoutes";
+import { ensureDefaultPremiumPlans } from "./scripts/seedPremiumPlans";
+import { getPlatformSettings } from "./services/platformSettingsService";
 
 dotenv.config();
 
@@ -45,6 +49,8 @@ app.use("/api/admin", examConfigRoutes);
 app.use("/api/admin", incrementRoutes);
 app.use("/api/admin", analyticsAdminRoutes);
 app.use("/api/admin", systemSettingsRoutes);
+app.use("/api/admin", premiumAdminRoutes);
+app.use("/api/premium", premiumRoutes);
 
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI;
@@ -55,6 +61,8 @@ async function start() {
     process.exit(1);
   }
   await mongoose.connect(MONGO_URI, { dbName: "proviQuiz" });
+  await getPlatformSettings();
+  await ensureDefaultPremiumPlans();
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

@@ -1,4 +1,4 @@
-import { AppBar, Box, Button, Container, IconButton, Tooltip, Toolbar, Typography, Drawer, List, ListItemButton, ListItemText, useMediaQuery, Menu, MenuItem, Divider, Grow, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { AppBar, Box, Button, Container, IconButton, Tooltip, Toolbar, Typography, Drawer, List, ListItemButton, ListItemText, Menu, MenuItem, Divider, Grow, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { NavLink } from "react-router-dom";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -6,9 +6,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useUiStore } from "../store/uiStore";
-import { useTheme } from "@mui/material/styles";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuthStore } from "../store/authStore";
+import { useDeviceAdapter } from "../hooks/useDeviceAdapter";
+import { usePremiumAccess } from "../hooks/usePremiumAccess";
 
 const linkSx = {
   textTransform: "none",
@@ -18,26 +19,42 @@ const linkSx = {
 export function Header() {
   const colorMode = useUiStore((s) => s.colorMode);
   const toggleColorMode = useUiStore((s) => s.toggleColorMode);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { useBottomNav, isCompactPhone } = useDeviceAdapter();
+  const isMobile = useBottomNav;
   const [open, setOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { isPremium } = usePremiumAccess();
+
+  const navItems = useMemo(() => {
+    const base = [
+      { label: "Home", to: "/" },
+      { label: "Start Exam", to: "/exam" },
+      { label: "Demo", to: "/demo" },
+    ];
+    if (isPremium) {
+      return [
+        { label: "Home", to: "/" },
+        { label: "Exam", to: "/exam" },
+        { label: "Analyse", to: "/premium/analyse" },
+        { label: "Battle", to: "/premium/battle" },
+        { label: "Premium", to: "/premium" },
+      ];
+    }
+    if (token) {
+      return [...base, { label: "Upgrade", to: "/premium/upgrade" }];
+    }
+    return base;
+  }, [isPremium, token]);
 
   const handleLogoutConfirm = () => {
     setLogoutDialogOpen(false);
     setUserMenuAnchor(null);
     logout();
   };
-
-  const navItems = [
-    { label: "Home", to: "/" },
-    { label: "Start Exam", to: "/exam" },
-    { label: "Demo", to: "/demo" },
-  ];
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
@@ -50,12 +67,19 @@ export function Header() {
 
   return (
     <AppBar position="sticky" elevation={0} color="transparent" sx={{ backdropFilter: "blur(10px)" }}>
-      <Toolbar sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+      <Toolbar
+        sx={{
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          minHeight: { xs: 52, sm: 64 },
+          pt: "env(safe-area-inset-top)",
+        }}
+      >
         <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
           <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
             {/* Left: logo */}
             <Box component={NavLink} to="/" sx={{ textDecoration: "none", color: "inherit" }}>
-              <Typography fontWeight={900} letterSpacing={-0.5}>
+              <Typography fontWeight={900} letterSpacing={-0.5} sx={{ fontSize: isCompactPhone ? 16 : 18 }}>
                 PROVIQUIZ
               </Typography>
             </Box>
@@ -145,6 +169,31 @@ export function Header() {
                       <MenuItem component={NavLink} to="/demo" onClick={() => setUserMenuAnchor(null)}>
                         Demo
                       </MenuItem>
+                      {isPremium && (
+                        <MenuItem component={NavLink} to="/premium/analyse" onClick={() => setUserMenuAnchor(null)}>
+                          Analyse
+                        </MenuItem>
+                      )}
+                      {isPremium && (
+                        <MenuItem component={NavLink} to="/premium/battle" onClick={() => setUserMenuAnchor(null)}>
+                          Battle
+                        </MenuItem>
+                      )}
+                      {isPremium && (
+                        <MenuItem component={NavLink} to="/premium/practice" onClick={() => setUserMenuAnchor(null)}>
+                          Practice
+                        </MenuItem>
+                      )}
+                      {isPremium && (
+                        <MenuItem component={NavLink} to="/premium" onClick={() => setUserMenuAnchor(null)}>
+                          Premium
+                        </MenuItem>
+                      )}
+                      {!isPremium && token && (
+                        <MenuItem component={NavLink} to="/premium/upgrade" onClick={() => setUserMenuAnchor(null)}>
+                          Upgrade
+                        </MenuItem>
+                      )}
                       {isAdmin && (
                         <MenuItem component={NavLink} to="/admin" onClick={() => setUserMenuAnchor(null)}>
                           Admin

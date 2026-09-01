@@ -6,6 +6,27 @@ export type AuthUser = {
   name?: string;
   role?: "student" | "admin" | "superadmin" | string;
   createdAt?: string;
+  premium?: {
+    tier: string;
+    isPremium: boolean;
+    plan?: {
+      id: string;
+      name: string;
+      slug: string;
+      examQuota: number;
+      examQuotaPeriod: string;
+      features: string[];
+      expiresAt: string;
+    };
+  };
+  examQuota?: {
+    applies: boolean;
+    unlimited: boolean;
+    limit: number;
+    used: number;
+    remaining: number;
+    periodLabel: string;
+  } | null;
 };
 
 export type AuthResponse = {
