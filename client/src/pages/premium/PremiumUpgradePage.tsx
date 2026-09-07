@@ -68,7 +68,7 @@ export function PremiumUpgradePage() {
     ? paywall.socialProof
     : SHOWCASE.map((s) => s.body);
 
-  const ctaTo = !token ? "/login" : isPremium ? "/premium" : "/premium";
+  const ctaTo = !token ? "/register" : "/premium";
   const ctaLabel = paywall?.ctaLabel ?? "Upgrade to Premium";
 
   return (
@@ -102,7 +102,7 @@ export function PremiumUpgradePage() {
             fullWidth={isPhone}
             sx={{ borderRadius: 999, minHeight: 48, fontWeight: 800 }}
           >
-            {token ? (isPremium ? "Open Premium" : ctaLabel) : "Sign in to upgrade"}
+            {token ? (isPremium ? "Open Premium" : ctaLabel) : "Create account"}
           </Button>
           <Button
             component={RouterLink}

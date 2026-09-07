@@ -40,7 +40,14 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
         warning: { main: "#F59E0B" },
         error: { main: "#DC2626" },
       },
-        typography: { fontFamily: '"Times New Roman", Times, serif' },
+        typography: {
+          fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif',
+          h1: { fontWeight: 800 },
+          h2: { fontWeight: 800 },
+          h3: { fontWeight: 800 },
+          h4: { fontWeight: 800 },
+          button: { fontWeight: 700 },
+        },
         shape: { borderRadius: 14 },
       components: {
         MuiCssBaseline: {

@@ -48,11 +48,13 @@ api.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized - redirect to login
     if (error.response?.status === 401) {
-      // Clear auth token if present
-      clearAuthToken();
-      // Redirect to login page
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      const url = String(error.config?.url ?? "");
+      const isAuthCall = url.includes("/auth/");
+      if (isAuthCall || !readAuthToken()) {
+        clearAuthToken();
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);

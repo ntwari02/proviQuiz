@@ -6,14 +6,23 @@ export function NotFoundPage() {
 
   return (
     <Stack spacing={2} alignItems="flex-start">
-      <Typography variant="h4" fontWeight={900} letterSpacing={-0.5}>
+      <Typography variant="h4" fontWeight={800} letterSpacing={-0.5}>
         Page not found
       </Typography>
-      <Typography color="text.secondary">The page you’re looking for doesn’t exist.</Typography>
-      <Button onClick={() => navigate("/")} variant="contained" sx={{ borderRadius: 999, textTransform: "none" }}>
-        Go home
-      </Button>
+      <Typography color="text.secondary">
+        That link is missing. Premium lives at /premium — it is not a separate website.
+      </Typography>
+      <Stack direction={{ xs: "column", sm: "row" }} gap={1}>
+        <Button onClick={() => navigate("/")} variant="contained">
+          Home
+        </Button>
+        <Button onClick={() => navigate("/exam")} variant="outlined">
+          Start exam
+        </Button>
+        <Button onClick={() => navigate("/premium")} variant="outlined">
+          Premium
+        </Button>
+      </Stack>
     </Stack>
   );
 }
-

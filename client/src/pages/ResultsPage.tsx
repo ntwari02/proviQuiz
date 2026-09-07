@@ -63,7 +63,14 @@ export function ResultsPage() {
   return (
     <Stack spacing={2.5}>
       {/* Compact strip like image */}
-      <Card variant="outlined" sx={{ borderRadius: 0, boxShadow: "0 18px 40px rgba(15,23,42,0.08)" }}>
+      <Card
+        variant="outlined"
+        sx={{
+          borderRadius: 3,
+          borderColor: passed ? "success.light" : "error.light",
+          bgcolor: passed ? "rgba(22,163,74,0.06)" : "rgba(220,38,38,0.06)",
+        }}
+      >
         <CardContent>
           <Stack direction={{ xs: "column", md: "row" }} gap={2} justifyContent="space-between">
             <Stack>
@@ -73,7 +80,7 @@ export function ResultsPage() {
               <Typography variant="h5" fontWeight={900}>
                 {result.correctCount} / {result.totalQuestions}
               </Typography>
-              <Typography variant="body2" color="success.main" fontWeight={700}>
+              <Typography variant="body2" color={passed ? "success.main" : "error.main"} fontWeight={700}>
                 Accuracy: {Math.round(result.scorePercent)}%
               </Typography>
             </Stack>

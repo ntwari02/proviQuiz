@@ -6,6 +6,7 @@ import { dailyChallengeApi, setExamDateApi } from "../api/challengeApi";
 import { useDeviceAdapter } from "../hooks/useDeviceAdapter";
 import { useAuthStore } from "../store/authStore";
 import { usePremiumAccess } from "../hooks/usePremiumAccess";
+import { FeatureTile } from "../components/ui/FeatureTile";
 
 function daysUntil(iso?: string | null) {
   if (!iso) return null;
@@ -72,10 +73,10 @@ export function HomePage() {
                 <Button
                   variant="outlined"
                   fullWidth={isPhone}
-                  onClick={() => navigate(token ? "/daily" : "/login?redirect=/daily")}
+                  onClick={() => navigate(token ? "/daily" : "/register")}
                   sx={{ borderColor: "rgba(255,255,255,0.55)", color: "#fff" }}
                 >
-                  Today’s challenge
+                  {token ? "Today’s challenge" : "Create account"}
                 </Button>
               </Stack>
             </Stack>
@@ -154,32 +155,38 @@ export function HomePage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
           gap: 1.5,
         }}
       >
-        {[
-          { title: "Timed mock", body: "20 questions · 20 minutes. Unchanged for everyone.", to: "/exam", cta: "Start" },
-          { title: "Daily 5", body: "A national habit. Streak + today’s board.", to: token ? "/daily" : "/login?redirect=/daily", cta: "Play" },
-          {
-            title: isPremium ? "Live battle" : "Go Premium",
-            body: isPremium ? "Share a code. Same exam. Highest score wins." : "Battles, Analyse, and smart practice from mistakes.",
-            to: isPremium ? "/premium/battle" : "/premium/upgrade",
-            cta: isPremium ? "Battle" : "See plans",
-          },
-        ].map((item) => (
-          <Card key={item.title} variant="outlined">
-            <CardContent>
-              <Typography fontWeight={900}>{item.title}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, minHeight: 44 }}>
-                {item.body}
-              </Typography>
-              <Button onClick={() => navigate(item.to)} sx={{ mt: 1.5 }} variant="text">
-                {item.cta}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        <FeatureTile
+          tone="ink"
+          kicker="Free"
+          title="Timed mock"
+          body="20 questions in 20 minutes. Same exam engine for everyone."
+          action="Start exam"
+          to="/exam"
+        />
+        <FeatureTile
+          tone="sand"
+          kicker="Habit"
+          title="Today’s 5"
+          body="The same five questions for every learner today. Sign in to keep a streak."
+          action={token ? "Play" : "Sign in to play"}
+          to={token ? "/daily" : "/login?redirect=/daily"}
+        />
+        <FeatureTile
+          tone={isPremium ? "brand" : "mint"}
+          kicker={isPremium ? "Premium" : "Upgrade"}
+          title={isPremium ? "Live battle" : "Premium tools"}
+          body={
+            isPremium
+              ? "Share a code. Same exam. Highest score wins."
+              : "Analyse, smart practice, and battles. Admins get this on a free login."
+          }
+          action={isPremium ? "Open battle" : "See Premium"}
+          to={isPremium ? "/premium/battle" : "/premium"}
+        />
       </Box>
     </Stack>
   );

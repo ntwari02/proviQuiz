@@ -32,9 +32,9 @@ export function Header() {
   const navItems = useMemo(() => {
     const base = [
       { label: "Home", to: "/" },
-      { label: "Start Exam", to: "/exam" },
+      { label: "Exam", to: "/exam" },
       { label: "Daily 5", to: "/daily" },
-      { label: "Demo", to: "/demo" },
+      { label: "Premium", to: "/premium" },
     ];
     if (isPremium) {
       return [
@@ -45,11 +45,8 @@ export function Header() {
         { label: "Premium", to: "/premium" },
       ];
     }
-    if (token) {
-      return [...base, { label: "Upgrade", to: "/premium/upgrade" }];
-    }
     return base;
-  }, [isPremium, token]);
+  }, [isPremium]);
 
   const handleLogoutConfirm = () => {
     setLogoutDialogOpen(false);

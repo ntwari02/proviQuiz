@@ -1,6 +1,6 @@
 import type { ExamQuotaPeriod } from "../models/PremiumPlan";
 import { PremiumExamUsage } from "../models/PremiumExamUsage";
-import { getActiveSubscription } from "./premiumAccessService";
+import { getActiveSubscription, isStaffUser } from "./premiumAccessService";
 
 export type QuotaStatus = {
   applies: boolean;
@@ -85,6 +85,19 @@ export function getResetsAt(period: ExamQuotaPeriod, at: Date = new Date()): Dat
 }
 
 export async function getExamQuotaStatus(userId: string): Promise<QuotaStatus> {
+  if (await isStaffUser(userId)) {
+    return {
+      applies: false,
+      unlimited: true,
+      limit: 0,
+      used: 0,
+      remaining: -1,
+      period: "unlimited",
+      periodKey: "staff",
+      periodLabel: "staff (unlimited)",
+    };
+  }
+
   const sub = await getActiveSubscription(userId);
   if (!sub?.plan) {
     return {
@@ -159,6 +172,9 @@ export async function consumeExamQuota(userId: string): Promise<QuotaStatus> {
 }
 
 export async function assertCanStartExam(userId: string): Promise<QuotaStatus | null> {
+  if (await isStaffUser(userId)) {
+    return getExamQuotaStatus(userId);
+  }
   const sub = await getActiveSubscription(userId);
   if (!sub) return null;
   const status = await getExamQuotaStatus(userId);

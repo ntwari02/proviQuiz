@@ -1,6 +1,7 @@
 import type { Types } from "mongoose";
 import { PremiumPlan, type PremiumPlanDocument, type ExamQuotaPeriod } from "../models/PremiumPlan";
 import { UserSubscription } from "../models/UserSubscription";
+import { User } from "../models/User";
 
 export type AccessTier = "free" | "trial" | "premium" | "expired";
 
@@ -45,9 +46,40 @@ export async function getActiveSubscription(userId: string) {
   return sub;
 }
 
+export function isStaffRole(role?: string | null) {
+  return role === "admin" || role === "superadmin";
+}
+
+export async function isStaffUser(userId: string) {
+  const user = await User.findById(userId).select("role").lean();
+  return isStaffRole(user?.role);
+}
+
+function staffAccess(): PremiumAccessInfo {
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 10);
+  return {
+    tier: "premium",
+    isPremium: true,
+    plan: {
+      id: "staff",
+      name: "Staff access",
+      slug: "staff",
+      examQuota: 0,
+      examQuotaPeriod: "unlimited",
+      features: ["analyse", "smartPractice", "myMistakes", "battle", "leaderboard"],
+      expiresAt: expiresAt.toISOString(),
+    },
+  };
+}
+
 export async function getPremiumAccess(userId?: string | null): Promise<PremiumAccessInfo> {
   if (!userId) {
     return { tier: "free", isPremium: false };
+  }
+
+  if (await isStaffUser(userId)) {
+    return staffAccess();
   }
 
   const sub = await getActiveSubscription(userId);

@@ -26,7 +26,7 @@ import { BulkImportExportPage } from "./pages/admin/BulkImportExportPage";
 import { SystemSettingsPage } from "./pages/admin/SystemSettingsPage";
 import { PremiumPlansPage } from "./pages/admin/PremiumPlansPage";
 import { PlatformSettingsPage } from "./pages/admin/PlatformSettingsPage";
-import { PremiumDashboardPage } from "./pages/premium/PremiumDashboardPage";
+import { PremiumHubPage } from "./pages/premium/PremiumHubPage";
 import { PremiumUpgradePage } from "./pages/premium/PremiumUpgradePage";
 import { AnalysePage } from "./pages/premium/AnalysePage";
 import { MistakesPage } from "./pages/premium/MistakesPage";
@@ -49,17 +49,8 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+        <Route path="/premium" element={<PremiumHubPage />} />
         <Route path="/premium/upgrade" element={<PremiumUpgradePage />} />
-        <Route
-          path="/premium"
-          element={
-            <RequireAuth>
-              <RequirePremium redirectToPaywall={false}>
-                <PremiumDashboardPage />
-              </RequirePremium>
-            </RequireAuth>
-          }
-        />
         <Route
           path="/premium/analyse"
           element={

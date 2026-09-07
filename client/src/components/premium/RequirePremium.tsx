@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { usePremiumAccess } from "../../hooks/usePremiumAccess";
-import { PaywallCard } from "./PaywallCard";
+import { PremiumUpgradePage } from "../../pages/premium/PremiumUpgradePage";
 
 export function RequirePremium({
   children,
@@ -12,7 +12,11 @@ export function RequirePremium({
   redirectToPaywall?: boolean;
 }) {
   const location = useLocation();
-  const { isPremium, isLoading, isError } = usePremiumAccess();
+  const { isPremium, isLoading, isStaff } = usePremiumAccess();
+
+  if (isStaff || isPremium) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
@@ -22,12 +26,8 @@ export function RequirePremium({
     );
   }
 
-  if (isError || !isPremium) {
-    if (redirectToPaywall) {
-      return <Navigate to="/premium/upgrade" state={{ from: location.pathname }} replace />;
-    }
-    return <PaywallCard />;
+  if (redirectToPaywall) {
+    return <Navigate to="/premium" state={{ from: location.pathname }} replace />;
   }
-
-  return <>{children}</>;
+  return <PremiumUpgradePage />;
 }

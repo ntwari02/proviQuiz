@@ -26,7 +26,7 @@ export function BottomNav() {
         { label: "Home", to: "/", icon: <HomeOutlinedIcon /> },
         { label: "Exam", to: "/exam", icon: <QuizOutlinedIcon /> },
         { label: "Daily", to: "/daily", icon: <WhatshotOutlinedIcon /> },
-        { label: token ? "Upgrade" : "Demo", to: token ? "/premium/upgrade" : "/demo", icon: <WorkspacePremiumOutlinedIcon /> },
+        { label: token ? "Premium" : "Sign in", to: token ? "/premium" : "/login", icon: <WorkspacePremiumOutlinedIcon /> },
       ];
 
   const value = items.find((i) =>
