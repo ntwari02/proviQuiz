@@ -530,7 +530,7 @@ export function HomePage() {
                   transition: "all .2s",
                 }}
               >
-                Start free mock
+                Start free ck
               </Button>
 
               <Button
